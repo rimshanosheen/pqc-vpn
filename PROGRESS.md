@@ -1607,15 +1607,16 @@ and no benign upload-heavy profile was invented to hide it.
 `vpn_core` 58/58 (52 prior + 6 new), and every other crate is unaffected.
 `python demo.py` runs end to end.
 
-### Deliberately not done (Week 8)
+### Deliberately not done (Week 8 — see that section below)
 
 - Layer 3 is not wired into `AnomalyCombiner`, so the THREAT
-  `produced_by` text is unchanged.
+  `produced_by` text is unchanged. **Done Week 8.**
 - There is no Rust export of the forest. It will go through either `skl2onnx`
   or a hand-written tree-traversal port. The joblib pickle is Python-only and
-  tied to scikit-learn 1.5.0 (recorded in the calibration file).
+  tied to scikit-learn 1.5.0 (recorded in the calibration file). **Done Week 8:
+  hand-written tree-traversal, tree-structure-level export.**
 - There is no Rust port of Layers 1–2 + the combiner, and no
-  `contracts/anomaly_vectors.json`.
+  `contracts/anomaly_vectors.json`. **Done Week 8.**
 
 ### Status against the Week 7 mandate
 
@@ -1626,23 +1627,221 @@ and no benign upload-heavy profile was invented to hide it.
   (simulated, and stated as such), and the Isolation Forest is trained,
   calibrated and tested.
 
+## Week 8 (Member 3 track, 2026-11-27) — real-grounded Layer 3, full Rust anomaly port
+
+The delivery plan's Week 8 task is: wire `LAYER3_CPU_GATE` into the combiner,
+port Layers 1–2 + the combiner to Rust, export the Isolation Forest for Rust
+consumption, and build `contracts/anomaly_vectors.json`. Asked for deeper
+rather than bigger: real-capture tooling for Layer 3 (today still 100%
+synthetic, see below), an adversarial mimicry/evasion test against the
+forest's known axis-aligned-split weakness, tree-structure-level Rust parity
+(not just output-level), property-based tests, a `cargo-fuzz` harness, and a
+local CPU-gate profile — on top of the plan's own checklist, not instead of
+it.
+
+### Combiner wiring — `client/rl_agent/anomaly_detector.py`
+
+`AnomalyCombiner` now owns an `IsolationForestLayer` and calls it when
+`cpu_load < LAYER3_CPU_GATE` (0.40 — stricter than Layer 2's 0.70, since it
+is the most expensive layer), folding its score into the existing `max()`
+over every ready layer exactly as Layer 2's signatures already do. A
+not-ready Layer 3 tick (sparse, below `LAYER3_MIN_PACKETS`) contributes
+nothing rather than a masking 0.0, so a real Layer 1/2 hit still surfaces.
+`contracts/state_vector.json`'s THREAT field description is updated to say so.
+
+**Tests** — new `tests/test_phase8.py` (5 tests, a fake Layer 3 injected via
+the constructor so the wiring is checked independent of the forest's own
+quality): the gate boundary in both directions, Layer 3's score
+participating in the max, and the not-ready-doesn't-mask rule.
+
+### Real-capture tooling — not yet exercised
+
+New `client/rl_agent/capture_scenario.sh` (idle/browsing/beaconing/
+bulk_upload/port_scan, sudo-gated `tcpdump`/`nmap`, loopback-only for
+anything attack-shaped) and `client/rl_agent/capture_real_traffic.py`
+(offline `scapy` parsing into `tick_features()`'s shape, direction
+classified by source IP on a real NIC or by TCP port role/flags on
+loopback). Writes `models/real_capture_corpus.json` (committed; raw pcaps
+gitignored). `train_isolation_forest.py` already consumes this corpus when
+it exists — mixing real benign rows into training with a **temporal**
+train/test split (never random-shuffled: adjacent real ticks are
+autocorrelated) — but **no one has run the capture script yet**, so the
+shipped model remains synthetic-only (`real_capture_used: false` in the
+calibration file). This is the one piece of this week's scope that needed a
+human at a keyboard rather than a tool call — an automated call cannot
+answer `sudo`'s interactive password prompt.
+
+### Retraining — ROC/PR and bootstrap CIs replace point estimates
+
+`train_isolation_forest.py`'s `calibrate_and_measure` now reports, for every
+benign profile and attack mix, a bootstrapped 95% CI (2,000 resamples)
+alongside the point rate, plus an overall ROC/PR curve and AUC for the
+benign-vs-attack separation `score_threshold` actually trades off (not
+per-mix — one operating point, one curve). Same seed, same synthetic-only
+training set as Week 7, so the model is numerically unchanged; only the
+measurement is deeper:
+
+| | value |
+|---|---|
+| ROC AUC | 0.9984 |
+| PR AUC | 0.9960 |
+| benign FP, idle (noisiest) | 2.50%, CI [1.25%, 4.25%] |
+| benign FP, other 4 profiles | 0.00%, CI [0.00%, 0.00%] |
+| exfiltration detected | 100.00%, CI [100.00%, 100.00%] |
+| port scan detected | 100.00%, CI [100.00%, 100.00%] |
+| beaconing detected | 87.50%, CI [84.00%, 90.75%] |
+
+### Mimicry/evasion test — `tests/test_phase8_mimicry.py`
+
+Precise framing, because it matters for how these numbers should be read: a
+low detection rate below demonstrates that a *stateless, per-tick-only*
+detector can be defeated this way. It is not a general claim that Isolation
+Forests are weak — a session-level detector would plausibly catch both.
+
+- **Slow-and-low exfiltration**: a session built entirely from the top 1%
+  most upload-heavy *benign-generator* ticks (not hand-invented numbers —
+  real samples the model was trained to consider normal), replayed 300
+  times. Real exfiltration is caught at 100%; this construction is flagged
+  **28.0%** of the time. Each assertion compares against the real attack's
+  own measured rate (read from the calibration file, margin 30 points) so
+  the test stays meaningful across a retrain rather than pinned to today's
+  numbers.
+- **Thin-spread port scan, sub-minimum variant**: pacing probes below
+  `LAYER3_MIN_PACKETS` per tick means every tick is simply never scored —
+  **0%** flagged, not because the forest misjudges it but because Layer 3
+  never runs.
+- **Thin-spread port scan, idle-shaped variant** (exactly 3 packets/tick,
+  sized and timed like the idle profile): **44.3%** flagged vs. real port
+  scan's 100% — the forest cannot tell a few small idle-ish packets from a
+  few small scan probes from shape alone within one tick.
+
+### `vpn_core::anomaly` (`core/src/anomaly/mod.rs`, `core/src/anomaly/forest.rs`)
+
+Line-for-line port of Layers 1–2 + the combiner, mirroring `rl::gate.rs`'s
+exact pattern (plain numeric inputs, `pub const`s, inline
+`#[cfg(test)] mod tests` with `include_str!` of `contracts/anomaly_vectors.json`,
+a constants drift-guard). Layer 3 is a genuinely new pattern for this
+codebase: `forest.rs` embeds two Python-exported JSON artifacts at compile
+time (`isolation_forest_trees.json`, `isolation_forest_calibration.json`)
+and walks the exact trees sklearn trained — `feature`/`threshold`/
+`children_left`/`children_right` plus a **precomputed per-leaf path-length
+correction** (`client/rl_agent/export_forest_trees.py` computes sklearn's
+own `c(n)` harmonic-number formula once in Python) — rather than
+reimplementing sklearn's path-length math in Rust. `serde_json` is promoted
+from a dev- to a normal dependency of `core` to parse these at startup:
+`core`'s first production dependency beyond crypto/rl primitives.
+
+**New `contracts/anomaly_vectors.json`** (`build_anomaly_vectors()` in
+`export_contracts.py`, mirroring `build_decision_gate_vectors()`): 11 named
+scenarios replayed tick-by-tick through a real `AnomalyCombiner` — Layer 1
+alone, each Layer 2 signature individually, Layer 3 on real benign- and
+scan-shaped ticks, both gate boundaries, and the not-ready-masking case —
+with every `expect` field captured as actual run output, never hand-typed.
+**New `contracts/isolation_forest_test_vectors.json`**: representative
+feature vectors (every benign profile, every attack mix, zero and extreme
+edge cases) with sklearn's own `score_samples()` output, for numeric parity
+at both the raw-score and calibrated-threat-score level.
+
+**Tests (12 new, 70 total in `vpn_core`):** the two vector replays above,
+a constants drift-guard, a not-ready-contributes-nothing check, and
+property tests (`proptest`, new dev-dependency): the tree walk always
+terminates at a leaf with a finite positive score for any finite input
+including boundary/extreme values and ±infinity; gating a layer off never
+increases the combiner's score; `threat_score` always stays in [0,1];
+`tick_features` is always finite whenever it returns `Some`.
+
+### `core/fuzz/` — cargo-fuzz, scoped to its own nightly toolchain
+
+New subcrate, own `rust-toolchain.toml` (`channel = "nightly"`) and own
+empty `[workspace]` table, excluded from the root workspace so its
+nightly-only tooling never touches the stable build the rest of the project
+uses. Two targets: `anomaly_forest` (arbitrary `[f64; 6]` vectors, including
+NaN/Inf from raw bytes, straight into the tree-walker) and
+`anomaly_combiner` (arbitrary numeric inputs plus independently-sized
+packet arrays into the full combiner). Both ran clean for 20s locally with
+no crashes (~1.3M execs for the forest target; ~9k execs for the combiner
+target — markedly slower because it rebuilds the embedded forest from JSON
+every single iteration rather than sharing one across iterations, a
+performance limitation worth fixing before a serious fuzzing campaign, not
+a correctness one).
+
+### Local CPU-gate profile — `core/examples/anomaly_bench.rs`
+
+1,000,000 ticks (cycling idle/browsing/scan/exfiltration-shaped packets)
+through the full combiner + forest: **3.2–3.7 µs/tick** on this Apple
+Silicon Mac, profiled with `samply` under the new `[profile.profiling]`.
+Against a 5 s real tick that is roughly six orders of magnitude below the
+tick budget — a directional sanity check that the <40% CPU gate is in the
+right ballpark, explicitly **not** a validation of the deployment droplet's
+Linux/x86 1-vCPU architecture, which this was never run on.
+
+### Fixed along the way
+
+`export_contracts.main()` was already calling `export_onnx.main()`, which
+failed on a fresh venv (`ModuleNotFoundError: No module named 'onnxscript'`)
+— torch's current ONNX exporter path imports it transitively and it was
+never in `requirements.txt`. Added. Unrelated to anomaly detection, but it
+blocked the whole export pipeline from running at all.
+
+### Tests
+
+`pytest tests/`: 115/121 (the 6 failures are `tests/test_phase1.py`'s
+pre-existing, documented `liboqs-python` build gap — unbuilt in this
+session's fresh venv, not a regression). `cargo test --workspace --exclude desktop`:
+`vpn_core` 70/70 (58 prior + 12 new), `handshake-server` 8/8 unaffected
+(`desktop` excluded only because this machine's disk is at 99% capacity and
+Tauri's dependency tree cannot complete there — not a code issue).
+`cargo fuzz run` (both targets, 20s each): no crashes. `python demo.py` was
+not re-verified end-to-end this week: it imports `oqs`, the same unbuilt
+`liboqs-python` dependency `test_phase1.py` hits.
+
+### Deliberately not done
+
+- The real capture itself: `capture_scenario.sh` needs a human to run it
+  (interactive `sudo`). Until then `real_capture_used: false` and every
+  number above is synthetic-only, same caveat Week 7 already carried.
+- No session-level or multi-tick detector, which the mimicry section above
+  states plainly would plausibly catch both constructions it demonstrates.
+- The `anomaly_combiner` fuzz target's per-iteration forest reconstruction
+  (performance, not correctness — see above).
+- No `cargo-flamegraph` fallback was needed; `samply` worked on the first
+  try on this macOS build.
+
 ## How to reproduce
 
 ```bash
 source venv/bin/activate
 pip install -r requirements.txt   # liboqs-python must be built separately
-pytest tests/ -v                  # 113/113
-cargo test --workspace            # vpn_core, handshake-server, desktop
+pytest tests/ -v                  # 115/121 without liboqs-python built; 121/121 with it
+cargo test --workspace --exclude desktop   # vpn_core, handshake-server (desktop needs Tauri's full dep tree)
 cargo run -p handshake-server --bin emit-vectors   # regenerate server/handshake-vectors.json
 
-python demo.py                            # end-to-end walkthrough
+python demo.py                            # end-to-end walkthrough (needs liboqs-python)
 python -m client.rl_agent.evaluate        # return vs baselines and the oracle
 python -m client.rl_agent.analyze_boundary  # the four before/after metrics
-python -m client.rl_agent.export_contracts  # regenerate contracts/ + the .onnx
+python -m client.rl_agent.export_contracts  # regenerate contracts/ + the .onnx + anomaly_vectors.json
 
 python -m client.rl_agent.verify_policy      # Week 3 robustness checks
 python -m client.rl_agent.decision_gate     # sizes the debounce constants
-python -m client.rl_agent.train_isolation_forest  # Week 7: train + calibrate anomaly Layer 3
+python -m client.rl_agent.train_isolation_forest  # train + calibrate anomaly Layer 3 (ROC/PR, bootstrap CIs)
+python -m client.rl_agent.export_forest_trees     # Week 8: tree-structure export for the Rust port
+
+# Week 8: real-capture grounding for Layer 3 -- run each scenario yourself
+# (needs interactive sudo for tcpdump/nmap), then parse and retrain:
+./client/rl_agent/capture_scenario.sh idle
+./client/rl_agent/capture_scenario.sh browsing
+./client/rl_agent/capture_scenario.sh beaconing
+./client/rl_agent/capture_scenario.sh bulk_upload
+./client/rl_agent/capture_scenario.sh port_scan
+python -m client.rl_agent.capture_real_traffic     # writes models/real_capture_corpus.json
+python -m client.rl_agent.train_isolation_forest   # retrains with real_capture_used=true
+python -m client.rl_agent.export_contracts         # re-exports everything downstream
+
+# Week 8: fuzzing + profiling (core/fuzz/ has its own nightly rust-toolchain.toml)
+cd core/fuzz && cargo fuzz run anomaly_forest -- -max_total_time=120
+cd core/fuzz && cargo fuzz run anomaly_combiner -- -max_total_time=120
+cargo build --profile profiling --example anomaly_bench -p vpn_core
+samply record ./target/profiling/examples/anomaly_bench
 
 python -m client.rl_agent.train             # single run, Week 2 defaults
 python -m client.rl_agent.train --sweep --promote            # the Week 2 experiment

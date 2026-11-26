@@ -30,6 +30,7 @@ import joblib
 import numpy as np
 import sklearn
 from sklearn.ensemble import IsolationForest
+from sklearn.metrics import average_precision_score, precision_recall_curve, roc_auc_score, roc_curve
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
@@ -49,6 +50,20 @@ ATTACK_TICKS_PER_MIX = 400
 N_ESTIMATORS = 100
 
 THRESHOLD_QUANTILE = 0.995
+
+# Week 8: real-capture grounding, on top of the synthetic generator kept as
+# a regression floor (see module docstring). `capture_real_traffic.py`
+# writes this corpus after `capture_scenario.sh` has been run; its absence
+# is not an error, just "no real data yet" -- every function below takes
+# `real_corpus=None` and falls back to synthetic-only exactly as before.
+REAL_CAPTURE_CORPUS_PATH = LAYER3_MODEL_PATH.parent / "real_capture_corpus.json"
+REAL_TRAIN_FRACTION = 0.70
+# Never random-shuffle real rows into train/test: adjacent ticks from the
+# same capture are autocorrelated (the same TCP connection, the same
+# curl loop), so a random split leaks test information into training.
+# The first REAL_TRAIN_FRACTION of each scenario, in capture order, trains;
+# the chronological remainder is held out.
+BOOTSTRAP_RESAMPLES = 2000
 # The anomaly threshold is the 99.5th percentile of held-out benign scores,
 # so about 1 benign tick in 200 crosses it. At 5 s ticks that is one false
 # alarm every ~17 minutes *from this layer alone*, and it lands as a
@@ -129,41 +144,150 @@ def benign_matrix(n_per_profile: int, rng: np.random.Generator) -> np.ndarray:
     return np.vstack([feature_matrix(p, n_per_profile, rng) for p in BENIGN_PROFILES.values()])
 
 
-def train(seed: int = SEED, n_per_profile: int = TRAIN_TICKS_PER_PROFILE) -> IsolationForest:
+def load_real_capture_corpus() -> dict | None:
+    if not REAL_CAPTURE_CORPUS_PATH.exists():
+        return None
+    return json.loads(REAL_CAPTURE_CORPUS_PATH.read_text())
+
+
+def _real_rows_by_scenario(corpus: dict) -> dict[str, np.ndarray]:
+    by_scenario: dict[str, list] = {}
+    for tick in corpus["ticks"]:
+        by_scenario.setdefault(tick["scenario"], []).append(tick)
+    out = {}
+    for scenario, ticks in by_scenario.items():
+        ticks = sorted(ticks, key=lambda t: t["tick_index"])
+        out[scenario] = np.array([[t["features"][name] for name in LAYER3_FEATURES] for t in ticks])
+    return out
+
+
+def real_benign_temporal_split(corpus: dict) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+    """The first REAL_TRAIN_FRACTION of each real BENIGN scenario (in
+    capture order) -> one stacked array of train rows; the chronological
+    remainder -> held-out, kept per scenario so false positives can still
+    be reported per scenario, matching the synthetic profiles' own shape."""
+    by_scenario = _real_rows_by_scenario(corpus)
+    train_chunks = []
+    heldout = {}
+    for scenario, meta in corpus["scenarios"].items():
+        if meta["category"] != "benign":
+            continue
+        rows = by_scenario.get(scenario)
+        if rows is None or len(rows) == 0:
+            continue
+        split = max(1, int(len(rows) * REAL_TRAIN_FRACTION))
+        train_chunks.append(rows[:split])
+        if len(rows) > split:
+            heldout[f"real_{scenario}"] = rows[split:]
+    train_rows = np.vstack(train_chunks) if train_chunks else np.empty((0, len(LAYER3_FEATURES)))
+    return train_rows, heldout
+
+
+def real_attack_shaped_rows(corpus: dict) -> dict[str, np.ndarray]:
+    """Real ticks shaped like an attack mix (see capture_real_traffic.py's
+    docstring for why beaconing/bulk_upload/port_scan land here rather than
+    in benign training) -- for measurement only, same as the synthetic
+    ATTACK_MIXES."""
+    by_scenario = _real_rows_by_scenario(corpus)
+    out = {}
+    for scenario, meta in corpus["scenarios"].items():
+        if meta["category"] != "attack_shaped":
+            continue
+        rows = by_scenario.get(scenario)
+        if rows is not None and len(rows):
+            out[f"real_{scenario}"] = rows
+    return out
+
+
+def train(seed: int = SEED, n_per_profile: int = TRAIN_TICKS_PER_PROFILE,
+          real_corpus: dict | None = None) -> IsolationForest:
     rng = np.random.default_rng(seed)
     x = benign_matrix(n_per_profile, rng)
+    if real_corpus is not None:
+        real_train, _ = real_benign_temporal_split(real_corpus)
+        if len(real_train):
+            x = np.vstack([x, real_train])
     return IsolationForest(n_estimators=N_ESTIMATORS, contamination="auto",
                            random_state=seed).fit(x)
 
 
-def calibrate_and_measure(model: IsolationForest, seed: int = SEED) -> dict:
+def _bootstrap_ci(flagged: np.ndarray, n_boot: int = BOOTSTRAP_RESAMPLES, seed: int = 0) -> list[float]:
+    """Nonparametric 95% CI on a flag-rate: resample `flagged` (one bool per
+    tick) with replacement `n_boot` times and take the 2.5th/97.5th
+    percentile of the resampled rate -- not a single-run point estimate."""
+    if len(flagged) == 0:
+        return [0.0, 0.0]
+    rng = np.random.default_rng(seed)
+    n = len(flagged)
+    idx = rng.integers(0, n, size=(n_boot, n))
+    boot_rates = flagged[idx].mean(axis=1)
+    return [float(np.quantile(boot_rates, 0.025)), float(np.quantile(boot_rates, 0.975))]
+
+
+def _downsample(arr: np.ndarray, n: int = 50) -> list[float]:
+    """A curve's full point list is too large to carry in the calibration
+    JSON every retrain; this keeps a representative, evenly-spaced subset
+    (including both endpoints) rather than truncating it."""
+    if len(arr) <= n:
+        return arr.tolist()
+    idx = np.linspace(0, len(arr) - 1, n).astype(int)
+    return arr[idx].tolist()
+
+
+def calibrate_and_measure(model: IsolationForest, seed: int = SEED,
+                           real_corpus: dict | None = None) -> dict:
     """Calibrate the thresholds on held-out benign traffic (a different seed
     stream from training), then measure per-profile false positives and
-    per-attack detection with those thresholds."""
+    per-attack detection with those thresholds -- each as a bootstrapped
+    rate plus a 95% CI, not a single-run point estimate -- plus an overall
+    ROC/PR curve for the benign-vs-attack separation `score_threshold`
+    actually trades off."""
     rng = np.random.default_rng(seed + 1)
     heldout = {name: feature_matrix(p, HELDOUT_TICKS_PER_PROFILE, rng)
                for name, p in BENIGN_PROFILES.items()}
-    benign_scores = -model.score_samples(np.vstack(list(heldout.values())))
+    if real_corpus is not None:
+        _, real_heldout = real_benign_temporal_split(real_corpus)
+        heldout.update(real_heldout)
+
+    all_benign = np.vstack(list(heldout.values()))
+    benign_scores = -model.score_samples(all_benign)
     median = float(np.median(benign_scores))
     threshold = float(np.quantile(benign_scores, THRESHOLD_QUANTILE))
 
-    def flag_rate(x):
-        return float(np.mean(-model.score_samples(x) >= threshold))
+    def flag_rate_with_ci(x: np.ndarray) -> dict:
+        flagged = (-model.score_samples(x) >= threshold)
+        return {"rate": float(flagged.mean()), "ci95": _bootstrap_ci(flagged)}
 
     attacks = {name: feature_matrix(p, ATTACK_TICKS_PER_MIX, rng)
                for name, p in ATTACK_MIXES.items()}
+    if real_corpus is not None:
+        attacks.update(real_attack_shaped_rows(real_corpus))
+    all_attack = np.vstack(list(attacks.values()))
+
+    y_true = np.concatenate([np.zeros(len(all_benign)), np.ones(len(all_attack))])
+    y_score = np.concatenate([benign_scores, -model.score_samples(all_attack)])
+    fpr, tpr, _ = roc_curve(y_true, y_score)
+    precision, recall, _ = precision_recall_curve(y_true, y_score)
+
     return {
         "score_median": median,
         "score_threshold": threshold,
         "threshold_quantile": THRESHOLD_QUANTILE,
-        "benign_false_positive_rate": {n: flag_rate(x) for n, x in heldout.items()},
-        "attack_detection_rate": {n: flag_rate(x) for n, x in attacks.items()},
+        "benign_false_positive_rate": {n: flag_rate_with_ci(x) for n, x in heldout.items()},
+        "attack_detection_rate": {n: flag_rate_with_ci(x) for n, x in attacks.items()},
+        "roc_auc": float(roc_auc_score(y_true, y_score)),
+        "pr_auc": float(average_precision_score(y_true, y_score)),
+        "roc_curve": {"fpr": _downsample(fpr), "tpr": _downsample(tpr)},
+        "pr_curve": {"precision": _downsample(precision), "recall": _downsample(recall)},
+        "bootstrap_resamples": BOOTSTRAP_RESAMPLES,
+        "real_capture_used": real_corpus is not None,
     }
 
 
 def main() -> int:
-    model = train()
-    measured = calibrate_and_measure(model)
+    real_corpus = load_real_capture_corpus()
+    model = train(real_corpus=real_corpus)
+    measured = calibrate_and_measure(model, real_corpus=real_corpus)
 
     LAYER3_MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, LAYER3_MODEL_PATH, compress=3)
@@ -174,9 +298,11 @@ def main() -> int:
         "seed": SEED,
         "n_estimators": N_ESTIMATORS,
         "train_ticks": TRAIN_TICKS_PER_PROFILE * len(BENIGN_PROFILES),
-        "note": ("Trained and measured on simulated traffic only; the profiles "
-                 "in train_isolation_forest.py are first-pass shapes, not "
-                 "captures. Re-derive once real traffic is available."),
+        "note": ("Benign training is simulated traffic (train_isolation_forest.py's "
+                 "first-pass profile shapes) plus real captured traffic when "
+                 "models/real_capture_corpus.json exists (see real_capture_used "
+                 "below) -- run capture_scenario.sh + capture_real_traffic.py "
+                 "and retrain to add it."),
         **measured,
     }
     LAYER3_CALIBRATION_PATH.write_text(json.dumps(calibration, indent=2) + "\n")
@@ -186,14 +312,16 @@ def main() -> int:
 
     print(f"wrote {LAYER3_MODEL_PATH.name} ({LAYER3_MODEL_PATH.stat().st_size / 1024:.0f} KB) "
           f"and {LAYER3_CALIBRATION_PATH.name}")
+    print(f"real_capture_used={measured['real_capture_used']}")
     print(f"score median {measured['score_median']:.4f}, "
           f"threshold {measured['score_threshold']:.4f} (q{THRESHOLD_QUANTILE})")
-    print("benign false-positive rate (held-out):")
-    for name, rate in measured["benign_false_positive_rate"].items():
-        print(f"  {name:<14} {rate:6.2%}")
+    print(f"roc_auc={measured['roc_auc']:.4f} pr_auc={measured['pr_auc']:.4f}")
+    print(f"benign false-positive rate (held-out, {BOOTSTRAP_RESAMPLES}-resample 95% CI):")
+    for name, m in measured["benign_false_positive_rate"].items():
+        print(f"  {name:<16} {m['rate']:6.2%}  CI [{m['ci95'][0]:.2%}, {m['ci95'][1]:.2%}]")
     print("attack detection rate:")
-    for name, rate in measured["attack_detection_rate"].items():
-        print(f"  {name:<14} {rate:6.2%}")
+    for name, m in measured["attack_detection_rate"].items():
+        print(f"  {name:<16} {m['rate']:6.2%}  CI [{m['ci95'][0]:.2%}, {m['ci95'][1]:.2%}]")
     return 0
 
 

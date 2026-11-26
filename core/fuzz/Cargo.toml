@@ -1,0 +1,33 @@
+[package]
+name = "vpn_core-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+arbitrary = { version = "1", features = ["derive"] }
+libfuzzer-sys = "0.4"
+vpn_core = { path = ".." }
+
+# Own workspace: this subcrate is excluded from the root one (see the root
+# Cargo.toml's [workspace] exclude) specifically so its nightly-only
+# cargo-fuzz tooling and dependency set never touch the stable workspace
+# the rest of the project builds with.
+[workspace]
+
+[[bin]]
+name = "anomaly_forest"
+path = "fuzz_targets/anomaly_forest.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "anomaly_combiner"
+path = "fuzz_targets/anomaly_combiner.rs"
+test = false
+doc = false
+bench = false

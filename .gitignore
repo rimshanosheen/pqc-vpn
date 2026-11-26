@@ -14,6 +14,11 @@ client/rl_agent/models/runs/
 /models/
 *.log
 
+# Raw packet captures (Week 8 real-traffic grounding): may contain real
+# destination hostnames/IPs from the browsing/beaconing curl loops. The
+# derived real_capture_corpus.json (6-float ticks only) IS committed.
+client/rl_agent/models/real_capture/raw/
+
 # Rust build output
 target/
 **/target/

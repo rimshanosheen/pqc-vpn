@@ -26,6 +26,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from client.rl_agent import export_onnx  # noqa: E402
 from client.rl_agent import decision_gate  # noqa: E402
+from client.rl_agent import export_forest_trees  # noqa: E402
+from client.rl_agent.anomaly_detector import (  # noqa: E402
+    LAYER2_CPU_GATE, LAYER3_CPU_GATE, AnomalyCombiner,
+)
 from client.rl_agent.state_observer import (  # noqa: E402
     CONNECTION_TYPE_SCORE,
     LATENCY_CAP_MS,
@@ -130,8 +134,8 @@ def build_state_vector() -> dict:
         (THREAT, "THREAT", "0=none, 1=confirmed anomaly",
          "Combined anomaly score across whichever detection layers the CPU gate "
          "allows; the consumer never needs to know which are active",
-         "anomaly_detector.py (Layers 1-2 combined under the CPU gate today; "
-         "Layer 3 lands later)", None),
+         "anomaly_detector.py (Layers 1-3 combined under their respective CPU "
+         "gates: Layer 2 below 70%, Layer 3 below 40%)", None),
     ]
 
     return {
@@ -254,6 +258,129 @@ def build_decision_gate_vectors() -> dict:
     }
 
 
+# ---------------------------------------------------------- Anomaly vectors
+#
+# Mirrors build_decision_gate_vectors()'s pattern: named scenarios, each a
+# tick sequence replayed through a fresh AnomalyCombiner, with every output
+# field captured as ACTUAL run output (never hand-typed) — same as above,
+# a port is correct when it reproduces this file, not when it satisfies a
+# separately-typed expectation that could itself be wrong.
+#
+# Unlike the gate (4 floats), a tick here is ~14 named fields, so scenarios
+# build on a few reusable fixtures instead of positional literals.
+
+_QUIET_METRICS = dict(
+    latency=20.0, packet_rate=50.0, packet_size=500.0,
+    distinct_ports=2, connection_attempts=5, failed_attempts=0,
+    retransmit_rate=0.0, latency_ms=20.0,
+    upload_bytes_per_sec=1000.0, download_bytes_per_sec=5000.0,
+    dns_server="1.1.1.1",
+)
+_QUIET_PACKETS = dict(
+    packet_sizes=[500, 520, 480, 510], arrival_times=[0.0, 1.0, 2.0, 3.0],
+    outbound=[True, False, True, False],
+)
+_SPARSE_PACKETS = dict(packet_sizes=[60, 60], arrival_times=[0.0, 1.0], outbound=[True, True])
+_SCAN_PACKETS = dict(
+    packet_sizes=[58] * 10, arrival_times=list(range(10)), outbound=[True] * 10,
+)
+
+
+def _tick(cpu_load: float, packets: dict = _QUIET_PACKETS, **overrides) -> dict:
+    t = {"cpu_load": cpu_load, **_QUIET_METRICS, **packets}
+    t.update(overrides)
+    return t
+
+
+# cpu_load bands: 0.1 -> both layers active; 0.5 -> layer2 on, layer3 off
+# (between the two gates); 0.9 -> both off.
+_ANOMALY_SCENARIOS: list[tuple[str, list[dict]]] = [
+    ("layer1 catches a latency outlier with layers 2 and 3 both gated off", [
+        *[_tick(0.9, latency=20.0 + (i % 5)) for i in range(50)],
+        _tick(0.9, latency=5000.0),
+    ]),
+    ("layer2 port_scan fires between the two gates (layer3 stays off)", [
+        _tick(0.5, distinct_ports=20, connection_attempts=20, failed_attempts=16),
+    ]),
+    ("layer2 retransmission needs two consecutive elevated ticks", [
+        _tick(0.5, retransmit_rate=0.5),
+        _tick(0.5, retransmit_rate=0.5),
+    ]),
+    ("layer2 mitm jitter needs a full window then two elevated ticks", [
+        _tick(0.5, latency_ms=20.0),
+        _tick(0.5, latency_ms=20.0),
+        _tick(0.5, latency_ms=200.0),
+        _tick(0.5, latency_ms=20.0),
+    ]),
+    ("layer2 exfiltration needs two consecutive upload-heavy ticks", [
+        _tick(0.5, upload_bytes_per_sec=3_000_000.0, download_bytes_per_sec=100_000.0),
+        _tick(0.5, upload_bytes_per_sec=3_000_000.0, download_bytes_per_sec=100_000.0),
+    ]),
+    ("layer2 dns_change needs a prior baseline before it can fire", [
+        _tick(0.5, dns_server="1.1.1.1"),
+        _tick(0.5, dns_server="8.8.8.8"),
+    ]),
+    ("layer3 scores a benign-shaped tick when cpu is below its own gate", [
+        _tick(0.1, packets=_QUIET_PACKETS),
+    ]),
+    ("layer3 scores a scan-shaped tick repeated across a session", [
+        _tick(0.1, packets=_SCAN_PACKETS) for _ in range(20)
+    ]),
+    ("layer3 gate is strict-less-than: exactly at the threshold is inactive", [
+        _tick(LAYER3_CPU_GATE, packets=_QUIET_PACKETS),
+    ]),
+    ("layer2 gate is strict-less-than: exactly at the threshold is inactive", [
+        _tick(LAYER2_CPU_GATE, distinct_ports=20, connection_attempts=20, failed_attempts=16),
+    ]),
+    ("a not-ready sparse layer3 tick never masks a real layer1 hit", [
+        *[_tick(0.1, latency=20.0 + (i % 5), packets=_SPARSE_PACKETS) for i in range(50)],
+        _tick(0.1, latency=5000.0, packets=_SPARSE_PACKETS),
+    ]),
+]
+
+
+def build_anomaly_vectors() -> dict:
+    cases = []
+    for name, ticks in _ANOMALY_SCENARIOS:
+        combiner = AnomalyCombiner()
+        steps = []
+        for tick in ticks:
+            packets = {k: tick[k] for k in ("packet_sizes", "arrival_times", "outbound")}
+            metrics = {k: v for k, v in tick.items() if k not in packets and k != "cpu_load"}
+            r = combiner.update(tick["cpu_load"], **metrics, **packets)
+            steps.append({
+                "input": tick,
+                "expect": {
+                    "anomalous": bool(r["anomalous"]),
+                    "threat_score": round(float(r["threat_score"]), 6),
+                    "ready": bool(r["ready"]),
+                    "layer2_active": bool(r["detail"]["layer2_active"]),
+                    "layer3_active": bool(r["detail"]["layer3_active"]),
+                },
+            })
+        cases.append({"name": name, "ticks": steps})
+
+    return {
+        "schema_version": 1,
+        "generated_by": GENERATOR,
+        "source_of_truth": "client/rl_agent/anomaly_detector.py",
+        "purpose": (
+            "Verify a port of AnomalyCombiner tick-for-tick, Layer 3 included. "
+            "Feed each case's ticks to a fresh combiner in order and assert "
+            "`expect` after every tick. `threat_score` ties this file to "
+            "whichever isolation_forest.joblib/calibration generated it -- "
+            "regenerate after every retrain "
+            "(isolation_forest_test_vectors.json carries the tree-level "
+            "parity check for Layer 3 alone, independent of the combiner)."
+        ),
+        "constants": {
+            "layer2_cpu_gate": LAYER2_CPU_GATE,
+            "layer3_cpu_gate": LAYER3_CPU_GATE,
+        },
+        "cases": cases,
+    }
+
+
 def build_manifest(artifacts: list[str]) -> dict:
     """Checksums for everything a consumer copies out of this repo.
 
@@ -330,13 +457,26 @@ def main() -> int:
     if rc != 0:
         return rc
 
+    # After export_onnx: build_anomaly_vectors() constructs a real
+    # AnomalyCombiner, which loads the shipped isolation_forest.joblib --
+    # must exist and be current before this runs (train_isolation_forest.py).
+    rc = export_forest_trees.main()
+    if rc != 0:
+        return rc
+    write("anomaly_vectors.json", build_anomaly_vectors())
+
     # Last, so it hashes the files this run just wrote.
     write("manifest.json", build_manifest([
         "contracts/algo_registry.json",
         "contracts/state_vector.json",
         "contracts/policy_test_vectors.json",
         "contracts/decision_gate_vectors.json",
+        "contracts/anomaly_vectors.json",
+        "contracts/isolation_forest_test_vectors.json",
         "client/rl_agent/models/ppo_vpn_agent.onnx",
+        "client/rl_agent/models/isolation_forest.joblib",
+        "client/rl_agent/models/isolation_forest_calibration.json",
+        "client/rl_agent/models/isolation_forest_trees.json",
     ]))
     return 0
 

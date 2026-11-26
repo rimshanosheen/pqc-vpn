@@ -4,11 +4,11 @@ Anomaly detection pipeline (proposal section 3.3).
 
 Layer 1 (always-active statistical Z-score baseline over latency, packet
 rate, and packet size), Layer 2 (rule-based signatures for known attack
-patterns, active below 70% CPU), and the combiner that folds them together
-under the CPU gate (`AnomalyCombiner`) are implemented here. Layer 3
-(Isolation Forest over per-tick traffic shape, to run below 40% CPU) is
-`IsolationForestLayer`, trained by `train_isolation_forest.py`; wiring it
-into the combiner is Week 8.
+patterns, active below 70% CPU), Layer 3 (Isolation Forest over per-tick
+traffic shape, active below 40% CPU), and the combiner that folds all
+three together under their respective CPU gates (`AnomalyCombiner`) are
+implemented here. `IsolationForestLayer` itself is trained by
+`train_isolation_forest.py`.
 
 Every class in this module takes plain numeric inputs and is decoupled
 from psutil / live sourcing, the same way ZScoreBaseline always has been —
@@ -292,12 +292,12 @@ class DNSServerChangeSignature:
 
 # ------------------------------------------------------------- Combiner
 #
-# Week 6: fold Layer 1 (always on) and the five Layer 2 signatures (gated)
-# into the single `threat_score` the state vector's THREAT dimension wants
-# (contracts/state_vector.json: "Combined anomaly score across whichever
-# detection layers the CPU gate allows; the consumer never needs to know
-# which are active"). Layer 3 is not built yet, so there is nothing to gate
-# below 40% CPU here — that lands Week 7.
+# Fold Layer 1 (always on), the five Layer 2 signatures (gated below 70%
+# CPU), and Layer 3 (gated below 40% CPU — stricter, since it is the most
+# expensive layer) into the single `threat_score` the state vector's THREAT
+# dimension wants (contracts/state_vector.json: "Combined anomaly score
+# across whichever detection layers the CPU gate allows; the consumer never
+# needs to know which are active").
 
 LAYER2_CPU_GATE = 0.70
 # Normalized [0,1], matching StateObserver.cpu_load() (psutil.cpu_percent()
@@ -307,25 +307,34 @@ LAYER2_CPU_GATE = 0.70
 
 
 class AnomalyCombiner:
-    """Owns one ZScoreBaseline (Layer 1) and the five Layer 2 signatures,
-    and combines whichever of them are active into one reading.
+    """Owns one ZScoreBaseline (Layer 1), the five Layer 2 signatures, and
+    one IsolationForestLayer (Layer 3), and combines whichever of them are
+    active into one reading.
 
     Deliberately still decoupled from psutil / live network sourcing, same
-    as every class above: `update()` takes `cpu_load` and every Layer 1/2
-    metric as plain numbers. Wiring those to real device/network sources
-    (psutil for cpu_load, a packet-capture or netstat-derived source for
-    the Layer 2 metrics) is separate, later work — there is no live daemon
-    to call this yet, the same reason StateObserver's own live psutil
-    reads have so far only ever been exercised by demo.py.
+    as every class above: `update()` takes `cpu_load` and every Layer 1/2/3
+    metric as plain numbers (Layer 3's raw packet arrays included — this
+    combiner never touches a socket). Wiring those to real device/network
+    sources (psutil for cpu_load, a packet-capture or netstat-derived
+    source for the Layer 2 metrics, a capture for Layer 3's packets) is
+    separate, later work — there is no live daemon to call this yet, the
+    same reason StateObserver's own live psutil reads have so far only ever
+    been exercised by demo.py.
+
+    `layer3` defaults to a real `IsolationForestLayer()` (which loads the
+    shipped `.joblib` + calibration) but can be injected — tests pass a
+    pre-built `IsolationForestLayer(model=..., calibration=...)` instead of
+    touching disk.
     """
 
-    def __init__(self, window: int = 50):
+    def __init__(self, window: int = 50, layer3: "IsolationForestLayer | None" = None):
         self.layer1 = ZScoreBaseline(window=window)
         self.port_scan = PortScanSignature()
         self.retransmission = RetransmissionSpikeSignature()
         self.mitm_latency = MitMLatencySignature()
         self.exfiltration = BandwidthExfiltrationSignature()
         self.dns_change = DNSServerChangeSignature()
+        self.layer3 = layer3 if layer3 is not None else IsolationForestLayer()
 
     def update(
         self,
@@ -342,26 +351,38 @@ class AnomalyCombiner:
         upload_bytes_per_sec: float,
         download_bytes_per_sec: float,
         dns_server: str,
+        packet_sizes=(),
+        arrival_times=(),
+        outbound=(),
     ) -> dict:
         """One tick. `cpu_load` is normalized [0,1] (StateObserver.cpu_load()).
         Layer 1 always runs. The five Layer 2 signatures run only when
-        `cpu_load < LAYER2_CPU_GATE` — when gated off they are simply not
-        called this tick, so a transient CPU spike doesn't corrupt their
-        streak/window state, it just means they sit this tick out.
+        `cpu_load < LAYER2_CPU_GATE`; Layer 3 runs only when
+        `cpu_load < LAYER3_CPU_GATE` (the stricter of the two gates, since
+        it is the most expensive layer) — when gated off, a layer is simply
+        not called this tick, so a transient CPU spike doesn't corrupt its
+        streak/window state, it just means it sits this tick out. The same
+        applies to Layer 3's raw packet arrays: when its gate is closed
+        they are not reduced via `tick_features`, even if the caller passed
+        them in.
 
         Returns the module's usual {anomalous, threat_score, ready, detail}
         shape: `ready` mirrors Layer 1's own `ready` (the always-on floor
         every prior direct-ZScoreBaseline caller relied on); `threat_score`
         is the max — not average — over every active layer whose own
-        `ready` is True, so one confirmed signature isn't diluted by four
-        quiet ones; `detail` carries a per-layer breakdown for debugging
-        and tests, which the state-vector consumer is free to ignore.
+        `ready` is True, so one confirmed signature isn't diluted by quiet
+        ones (including a not-yet-`ready` Layer 3, which contributes
+        nothing rather than a masking 0.0 — see `tick_features`'s
+        `LAYER3_MIN_PACKETS` floor); `detail` carries a per-layer breakdown
+        for debugging and tests, which the state-vector consumer is free to
+        ignore.
         """
         layer1_result = self.layer1.update(
             latency=latency, packet_rate=packet_rate, packet_size=packet_size,
         )
 
         layer2_active = cpu_load < LAYER2_CPU_GATE
+        layer3_active = cpu_load < LAYER3_CPU_GATE
         layer_results = {"layer1": layer1_result}
 
         if layer2_active:
@@ -384,6 +405,10 @@ class AnomalyCombiner:
                 dns_server=dns_server,
             )
 
+        if layer3_active:
+            features = tick_features(packet_sizes, arrival_times, outbound)
+            layer_results["layer3"] = self.layer3.update(features)
+
         # Only a ready layer's threat_score counts — an unready layer (not
         # enough history yet) contributes nothing rather than a misleading
         # 0.0 that would mask a real hit from a layer that IS ready.
@@ -397,6 +422,7 @@ class AnomalyCombiner:
             "ready": layer1_result["ready"],
             "detail": {
                 "layer2_active": layer2_active,
+                "layer3_active": layer3_active,
                 "layers": layer_results,
             },
         }
@@ -414,7 +440,8 @@ class AnomalyCombiner:
 # (`train_isolation_forest.py`), so it needs no labelled attacks.
 
 LAYER3_CPU_GATE = 0.40
-# Same units as LAYER2_CPU_GATE. The combiner wiring that reads it is Week 8.
+# Same units as LAYER2_CPU_GATE; stricter than it, since Layer 3 is the
+# most expensive layer. Read by AnomalyCombiner.update() above.
 
 LAYER3_FEATURES = (
     "out_size_mean",    # bytes per outbound packet (0 if none)

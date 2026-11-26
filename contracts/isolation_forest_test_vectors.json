@@ -1,0 +1,935 @@
+{
+  "schema_version": 1,
+  "generated_by": "python -m client.rl_agent.export_forest_trees",
+  "source_of_truth": "client/rl_agent/models/isolation_forest.joblib + isolation_forest_calibration.json",
+  "purpose": "Numeric parity for a Rust Layer 3 port, both at the raw tree-walk level (expect_raw_score, compare against isolation_forest_trees.json's walk) and the calibrated-layer level (expect_threat_score/expect_anomalous, using score_median/score_threshold below). Tolerance 1e-5, same convention as policy_test_vectors.json.",
+  "tolerance": 1e-05,
+  "score_median": 0.4783566634223771,
+  "score_threshold": 0.6280825236645683,
+  "vectors": [
+    {
+      "name": "benign_idle_0",
+      "features": {
+        "out_size_mean": 122.189702,
+        "in_size_mean": 114.260791,
+        "pkt_size_std": 56.673667,
+        "log_pkt_rate": 0.819544,
+        "iat_cv": 0.859053,
+        "upload_share": 0.693026
+      },
+      "expect_raw_score": 0.543029786,
+      "expect_threat_score": 0.215972,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_idle_1",
+      "features": {
+        "out_size_mean": 103.807917,
+        "in_size_mean": 152.373284,
+        "pkt_size_std": 64.007393,
+        "log_pkt_rate": 0.716003,
+        "iat_cv": 0.704593,
+        "upload_share": 0.525407
+      },
+      "expect_raw_score": 0.488375194,
+      "expect_threat_score": 0.033456,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_idle_2",
+      "features": {
+        "out_size_mean": 119.08454,
+        "in_size_mean": 134.053138,
+        "pkt_size_std": 58.740581,
+        "log_pkt_rate": 0.623249,
+        "iat_cv": 0.905109,
+        "upload_share": 0.287643
+      },
+      "expect_raw_score": 0.472742417,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_idle_3",
+      "features": {
+        "out_size_mean": 133.108848,
+        "in_size_mean": 69.087645,
+        "pkt_size_std": 44.641893,
+        "log_pkt_rate": 0.30103,
+        "iat_cv": 0.608526,
+        "upload_share": 0.562257
+      },
+      "expect_raw_score": 0.564783925,
+      "expect_threat_score": 0.288618,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_idle_4",
+      "features": {
+        "out_size_mean": 128.219691,
+        "in_size_mean": 173.978783,
+        "pkt_size_std": 64.40276,
+        "log_pkt_rate": 0.662758,
+        "iat_cv": 0.843865,
+        "upload_share": 0.595791
+      },
+      "expect_raw_score": 0.484375243,
+      "expect_threat_score": 0.020099,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_idle_5",
+      "features": {
+        "out_size_mean": 106.588528,
+        "in_size_mean": 208.312855,
+        "pkt_size_std": 54.151824,
+        "log_pkt_rate": 0.380211,
+        "iat_cv": 0.465525,
+        "upload_share": 0.754303
+      },
+      "expect_raw_score": 0.603316717,
+      "expect_threat_score": 0.417296,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_idle_6",
+      "features": {
+        "out_size_mean": 105.588284,
+        "in_size_mean": 176.686187,
+        "pkt_size_std": 74.568537,
+        "log_pkt_rate": 0.748188,
+        "iat_cv": 1.294799,
+        "upload_share": 0.394648
+      },
+      "expect_raw_score": 0.508018139,
+      "expect_threat_score": 0.099053,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_idle_7",
+      "features": {
+        "out_size_mean": 112.509433,
+        "in_size_mean": 273.400793,
+        "pkt_size_std": 112.146342,
+        "log_pkt_rate": 0.342423,
+        "iat_cv": 0.9839,
+        "upload_share": 0.291543
+      },
+      "expect_raw_score": 0.557165725,
+      "expect_threat_score": 0.263178,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_browsing_0",
+      "features": {
+        "out_size_mean": 98.323405,
+        "in_size_mean": 1167.695078,
+        "pkt_size_std": 556.227133,
+        "log_pkt_rate": 2.166134,
+        "iat_cv": 1.533168,
+        "upload_share": 0.040962
+      },
+      "expect_raw_score": 0.461261381,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_browsing_1",
+      "features": {
+        "out_size_mean": 97.518481,
+        "in_size_mean": 1152.573956,
+        "pkt_size_std": 556.96899,
+        "log_pkt_rate": 2.278754,
+        "iat_cv": 2.118372,
+        "upload_share": 0.040218
+      },
+      "expect_raw_score": 0.459528663,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_browsing_2",
+      "features": {
+        "out_size_mean": 98.870102,
+        "in_size_mean": 1175.702393,
+        "pkt_size_std": 541.235276,
+        "log_pkt_rate": 1.673942,
+        "iat_cv": 2.159183,
+        "upload_share": 0.032543
+      },
+      "expect_raw_score": 0.521593758,
+      "expect_threat_score": 0.144388,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_browsing_3",
+      "features": {
+        "out_size_mean": 90.51981,
+        "in_size_mean": 1177.324158,
+        "pkt_size_std": 580.696197,
+        "log_pkt_rate": 1.722634,
+        "iat_cv": 1.9711,
+        "upload_share": 0.051345
+      },
+      "expect_raw_score": 0.487647533,
+      "expect_threat_score": 0.031026,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_browsing_4",
+      "features": {
+        "out_size_mean": 93.600783,
+        "in_size_mean": 1169.580282,
+        "pkt_size_std": 564.80769,
+        "log_pkt_rate": 2.249932,
+        "iat_cv": 1.913421,
+        "upload_share": 0.041234
+      },
+      "expect_raw_score": 0.452808572,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_browsing_5",
+      "features": {
+        "out_size_mean": 103.18636,
+        "in_size_mean": 1195.444502,
+        "pkt_size_std": 579.136906,
+        "log_pkt_rate": 1.856124,
+        "iat_cv": 3.545157,
+        "upload_share": 0.055266
+      },
+      "expect_raw_score": 0.531511531,
+      "expect_threat_score": 0.177507,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_browsing_6",
+      "features": {
+        "out_size_mean": 96.053724,
+        "in_size_mean": 1146.708786,
+        "pkt_size_std": 567.328055,
+        "log_pkt_rate": 1.944483,
+        "iat_cv": 2.307389,
+        "upload_share": 0.054344
+      },
+      "expect_raw_score": 0.456971655,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_browsing_7",
+      "features": {
+        "out_size_mean": 96.109539,
+        "in_size_mean": 1154.733862,
+        "pkt_size_std": 556.643429,
+        "log_pkt_rate": 2.182985,
+        "iat_cv": 2.159149,
+        "upload_share": 0.040105
+      },
+      "expect_raw_score": 0.44706435,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_streaming_0",
+      "features": {
+        "out_size_mean": 66.581269,
+        "in_size_mean": 1386.05233,
+        "pkt_size_std": 568.243641,
+        "log_pkt_rate": 2.440279,
+        "iat_cv": 1.415825,
+        "upload_share": 0.014737
+      },
+      "expect_raw_score": 0.448714516,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_streaming_1",
+      "features": {
+        "out_size_mean": 65.171541,
+        "in_size_mean": 1383.765405,
+        "pkt_size_std": 616.07144,
+        "log_pkt_rate": 2.440279,
+        "iat_cv": 1.25916,
+        "upload_share": 0.020816
+      },
+      "expect_raw_score": 0.438294621,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_streaming_2",
+      "features": {
+        "out_size_mean": 66.35242,
+        "in_size_mean": 1388.923615,
+        "pkt_size_std": 640.047273,
+        "log_pkt_rate": 2.63488,
+        "iat_cv": 1.199557,
+        "upload_share": 0.026235
+      },
+      "expect_raw_score": 0.452540165,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_streaming_3",
+      "features": {
+        "out_size_mean": 66.170759,
+        "in_size_mean": 1388.341342,
+        "pkt_size_std": 605.060603,
+        "log_pkt_rate": 2.69897,
+        "iat_cv": 0.876554,
+        "upload_share": 0.019003
+      },
+      "expect_raw_score": 0.425118143,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_streaming_4",
+      "features": {
+        "out_size_mean": 65.693483,
+        "in_size_mean": 1387.131547,
+        "pkt_size_std": 558.479212,
+        "log_pkt_rate": 2.733679,
+        "iat_cv": 0.970429,
+        "upload_share": 0.01353
+      },
+      "expect_raw_score": 0.443767759,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_streaming_5",
+      "features": {
+        "out_size_mean": 66.593605,
+        "in_size_mean": 1381.353314,
+        "pkt_size_std": 620.045429,
+        "log_pkt_rate": 2.510813,
+        "iat_cv": 0.859585,
+        "upload_share": 0.022361
+      },
+      "expect_raw_score": 0.447792591,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_streaming_6",
+      "features": {
+        "out_size_mean": 65.791621,
+        "in_size_mean": 1387.688376,
+        "pkt_size_std": 615.02735,
+        "log_pkt_rate": 2.694605,
+        "iat_cv": 1.278391,
+        "upload_share": 0.020522
+      },
+      "expect_raw_score": 0.423628571,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_streaming_7",
+      "features": {
+        "out_size_mean": 65.973468,
+        "in_size_mean": 1388.541539,
+        "pkt_size_std": 618.740754,
+        "log_pkt_rate": 2.50974,
+        "iat_cv": 0.685643,
+        "upload_share": 0.021215
+      },
+      "expect_raw_score": 0.429940639,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_bulk_download_0",
+      "features": {
+        "out_size_mean": 65.963283,
+        "in_size_mean": 1457.326491,
+        "pkt_size_std": 695.875009,
+        "log_pkt_rate": 3.223236,
+        "iat_cv": 0.697572,
+        "upload_share": 0.041088
+      },
+      "expect_raw_score": 0.479507159,
+      "expect_threat_score": 0.003842,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_bulk_download_1",
+      "features": {
+        "out_size_mean": 66.016337,
+        "in_size_mean": 1457.115451,
+        "pkt_size_std": 688.716417,
+        "log_pkt_rate": 3.160529,
+        "iat_cv": 0.442851,
+        "upload_share": 0.03272
+      },
+      "expect_raw_score": 0.470907905,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_bulk_download_2",
+      "features": {
+        "out_size_mean": 66.067145,
+        "in_size_mean": 1455.229676,
+        "pkt_size_std": 694.966107,
+        "log_pkt_rate": 3.150879,
+        "iat_cv": 0.721368,
+        "upload_share": 0.042085
+      },
+      "expect_raw_score": 0.49320131,
+      "expect_threat_score": 0.049573,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_bulk_download_3",
+      "features": {
+        "out_size_mean": 66.099006,
+        "in_size_mean": 1456.119338,
+        "pkt_size_std": 687.077057,
+        "log_pkt_rate": 3.20989,
+        "iat_cv": 0.656491,
+        "upload_share": 0.03211
+      },
+      "expect_raw_score": 0.445131611,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_bulk_download_4",
+      "features": {
+        "out_size_mean": 65.892724,
+        "in_size_mean": 1456.613363,
+        "pkt_size_std": 689.367618,
+        "log_pkt_rate": 2.938019,
+        "iat_cv": 0.680848,
+        "upload_share": 0.033214
+      },
+      "expect_raw_score": 0.439507164,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_bulk_download_5",
+      "features": {
+        "out_size_mean": 66.003033,
+        "in_size_mean": 1457.960181,
+        "pkt_size_std": 650.261385,
+        "log_pkt_rate": 2.956649,
+        "iat_cv": 0.853916,
+        "upload_share": 0.020914
+      },
+      "expect_raw_score": 0.454264343,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_bulk_download_6",
+      "features": {
+        "out_size_mean": 66.164198,
+        "in_size_mean": 1456.926142,
+        "pkt_size_std": 650.873527,
+        "log_pkt_rate": 3.018118,
+        "iat_cv": 0.572822,
+        "upload_share": 0.021186
+      },
+      "expect_raw_score": 0.460275468,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_bulk_download_7",
+      "features": {
+        "out_size_mean": 66.092987,
+        "in_size_mean": 1456.213107,
+        "pkt_size_std": 695.063494,
+        "log_pkt_rate": 3.108836,
+        "iat_cv": 0.900302,
+        "upload_share": 0.04045
+      },
+      "expect_raw_score": 0.464072963,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_video_call_0",
+      "features": {
+        "out_size_mean": 998.438013,
+        "in_size_mean": 995.199097,
+        "pkt_size_std": 190.639377,
+        "log_pkt_rate": 2.26811,
+        "iat_cv": 0.585683,
+        "upload_share": 0.500812
+      },
+      "expect_raw_score": 0.488780538,
+      "expect_threat_score": 0.03481,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_video_call_1",
+      "features": {
+        "out_size_mean": 1005.927834,
+        "in_size_mean": 1010.171018,
+        "pkt_size_std": 197.748044,
+        "log_pkt_rate": 2.323871,
+        "iat_cv": 0.308436,
+        "upload_share": 0.422233
+      },
+      "expect_raw_score": 0.553319817,
+      "expect_threat_score": 0.250335,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_video_call_2",
+      "features": {
+        "out_size_mean": 991.502885,
+        "in_size_mean": 989.62252,
+        "pkt_size_std": 207.821692,
+        "log_pkt_rate": 2.423246,
+        "iat_cv": 0.435134,
+        "upload_share": 0.451228
+      },
+      "expect_raw_score": 0.546286217,
+      "expect_threat_score": 0.226846,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_video_call_3",
+      "features": {
+        "out_size_mean": 982.423325,
+        "in_size_mean": 993.815246,
+        "pkt_size_std": 187.10082,
+        "log_pkt_rate": 1.959995,
+        "iat_cv": 0.649031,
+        "upload_share": 0.504879
+      },
+      "expect_raw_score": 0.573322299,
+      "expect_threat_score": 0.317132,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_video_call_4",
+      "features": {
+        "out_size_mean": 990.851922,
+        "in_size_mean": 1002.953309,
+        "pkt_size_std": 201.502686,
+        "log_pkt_rate": 2.457882,
+        "iat_cv": 0.415957,
+        "upload_share": 0.49277
+      },
+      "expect_raw_score": 0.488897533,
+      "expect_threat_score": 0.035201,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_video_call_5",
+      "features": {
+        "out_size_mean": 1003.800367,
+        "in_size_mean": 1001.772596,
+        "pkt_size_std": 197.433879,
+        "log_pkt_rate": 2.288249,
+        "iat_cv": 0.48626,
+        "upload_share": 0.507752
+      },
+      "expect_raw_score": 0.454983606,
+      "expect_threat_score": 0.0,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_video_call_6",
+      "features": {
+        "out_size_mean": 1008.280323,
+        "in_size_mean": 1008.483337,
+        "pkt_size_std": 196.262149,
+        "log_pkt_rate": 2.074085,
+        "iat_cv": 0.30881,
+        "upload_share": 0.452331
+      },
+      "expect_raw_score": 0.547780297,
+      "expect_threat_score": 0.231836,
+      "expect_anomalous": false
+    },
+    {
+      "name": "benign_video_call_7",
+      "features": {
+        "out_size_mean": 990.123488,
+        "in_size_mean": 1015.264132,
+        "pkt_size_std": 203.247091,
+        "log_pkt_rate": 2.209515,
+        "iat_cv": 0.61114,
+        "upload_share": 0.427393
+      },
+      "expect_raw_score": 0.543534918,
+      "expect_threat_score": 0.217659,
+      "expect_anomalous": false
+    },
+    {
+      "name": "attack_exfiltration_0",
+      "features": {
+        "out_size_mean": 1445.554712,
+        "in_size_mean": 66.297776,
+        "pkt_size_std": 596.005138,
+        "log_pkt_rate": 3.163281,
+        "iat_cv": 0.911227,
+        "upload_share": 0.985183
+      },
+      "expect_raw_score": 0.694268382,
+      "expect_threat_score": 0.721023,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_exfiltration_1",
+      "features": {
+        "out_size_mean": 1446.411501,
+        "in_size_mean": 66.604374,
+        "pkt_size_std": 606.479304,
+        "log_pkt_rate": 2.903416,
+        "iat_cv": 0.958153,
+        "upload_share": 0.984068
+      },
+      "expect_raw_score": 0.691008472,
+      "expect_threat_score": 0.710137,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_exfiltration_2",
+      "features": {
+        "out_size_mean": 1444.541292,
+        "in_size_mean": 66.089007,
+        "pkt_size_std": 630.229093,
+        "log_pkt_rate": 3.120771,
+        "iat_cv": 0.6118,
+        "upload_share": 0.98114
+      },
+      "expect_raw_score": 0.694912565,
+      "expect_threat_score": 0.723175,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_exfiltration_3",
+      "features": {
+        "out_size_mean": 1445.784172,
+        "in_size_mean": 66.325884,
+        "pkt_size_std": 548.684643,
+        "log_pkt_rate": 3.172019,
+        "iat_cv": 0.875349,
+        "upload_share": 0.988962
+      },
+      "expect_raw_score": 0.694745329,
+      "expect_threat_score": 0.722616,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_exfiltration_4",
+      "features": {
+        "out_size_mean": 1445.515487,
+        "in_size_mean": 65.943135,
+        "pkt_size_std": 607.440918,
+        "log_pkt_rate": 3.109983,
+        "iat_cv": 0.958797,
+        "upload_share": 0.984103
+      },
+      "expect_raw_score": 0.688208997,
+      "expect_threat_score": 0.700789,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_exfiltration_5",
+      "features": {
+        "out_size_mean": 1445.733758,
+        "in_size_mean": 66.007119,
+        "pkt_size_std": 596.909072,
+        "log_pkt_rate": 3.16838,
+        "iat_cv": 0.963013,
+        "upload_share": 0.985177
+      },
+      "expect_raw_score": 0.694268382,
+      "expect_threat_score": 0.721023,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_exfiltration_6",
+      "features": {
+        "out_size_mean": 1443.880715,
+        "in_size_mean": 65.998801,
+        "pkt_size_std": 603.568514,
+        "log_pkt_rate": 2.75694,
+        "iat_cv": 0.56514,
+        "upload_share": 0.984406
+      },
+      "expect_raw_score": 0.696206205,
+      "expect_threat_score": 0.727495,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_exfiltration_7",
+      "features": {
+        "out_size_mean": 1444.782951,
+        "in_size_mean": 65.39954,
+        "pkt_size_std": 562.263517,
+        "log_pkt_rate": 2.863799,
+        "iat_cv": 0.649597,
+        "upload_share": 0.988174
+      },
+      "expect_raw_score": 0.693336594,
+      "expect_threat_score": 0.717912,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_port_scan_0",
+      "features": {
+        "out_size_mean": 58.074109,
+        "in_size_mean": 53.961454,
+        "pkt_size_std": 4.498092,
+        "log_pkt_rate": 2.741624,
+        "iat_cv": 0.198815,
+        "upload_share": 0.565169
+      },
+      "expect_raw_score": 0.6528746,
+      "expect_threat_score": 0.582792,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_port_scan_1",
+      "features": {
+        "out_size_mean": 58.028548,
+        "in_size_mean": 54.00675,
+        "pkt_size_std": 4.43282,
+        "log_pkt_rate": 2.961136,
+        "iat_cv": 0.379423,
+        "upload_share": 0.528765
+      },
+      "expect_raw_score": 0.645293193,
+      "expect_threat_score": 0.557474,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_port_scan_2",
+      "features": {
+        "out_size_mean": 58.141497,
+        "in_size_mean": 53.84532,
+        "pkt_size_std": 4.530595,
+        "log_pkt_rate": 2.391641,
+        "iat_cv": 0.120566,
+        "upload_share": 0.538278
+      },
+      "expect_raw_score": 0.634490676,
+      "expect_threat_score": 0.5214,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_port_scan_3",
+      "features": {
+        "out_size_mean": 57.849464,
+        "in_size_mean": 54.023616,
+        "pkt_size_std": 4.385571,
+        "log_pkt_rate": 3.170907,
+        "iat_cv": 0.126773,
+        "upload_share": 0.637347
+      },
+      "expect_raw_score": 0.665596701,
+      "expect_threat_score": 0.625276,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_port_scan_4",
+      "features": {
+        "out_size_mean": 57.994962,
+        "in_size_mean": 53.855807,
+        "pkt_size_std": 4.458569,
+        "log_pkt_rate": 2.798789,
+        "iat_cv": 0.354804,
+        "upload_share": 0.654934
+      },
+      "expect_raw_score": 0.661622416,
+      "expect_threat_score": 0.612004,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_port_scan_5",
+      "features": {
+        "out_size_mean": 57.930955,
+        "in_size_mean": 54.046073,
+        "pkt_size_std": 4.46421,
+        "log_pkt_rate": 3.074378,
+        "iat_cv": 0.223588,
+        "upload_share": 0.589338
+      },
+      "expect_raw_score": 0.662003765,
+      "expect_threat_score": 0.613278,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_port_scan_6",
+      "features": {
+        "out_size_mean": 57.979108,
+        "in_size_mean": 54.15142,
+        "pkt_size_std": 4.4623,
+        "log_pkt_rate": 3.160108,
+        "iat_cv": 0.175519,
+        "upload_share": 0.661228
+      },
+      "expect_raw_score": 0.665663509,
+      "expect_threat_score": 0.625499,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_port_scan_7",
+      "features": {
+        "out_size_mean": 57.992491,
+        "in_size_mean": 54.023241,
+        "pkt_size_std": 4.462583,
+        "log_pkt_rate": 3.221466,
+        "iat_cv": 0.20824,
+        "upload_share": 0.546047
+      },
+      "expect_raw_score": 0.654362888,
+      "expect_threat_score": 0.587762,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_beaconing_0",
+      "features": {
+        "out_size_mean": 241.108228,
+        "in_size_mean": 177.321938,
+        "pkt_size_std": 46.101409,
+        "log_pkt_rate": 0.414973,
+        "iat_cv": 0.016965,
+        "upload_share": 0.449288
+      },
+      "expect_raw_score": 0.607627149,
+      "expect_threat_score": 0.431691,
+      "expect_anomalous": false
+    },
+    {
+      "name": "attack_beaconing_1",
+      "features": {
+        "out_size_mean": 249.783131,
+        "in_size_mean": 187.839731,
+        "pkt_size_std": 54.026196,
+        "log_pkt_rate": 0.716003,
+        "iat_cv": 0.027023,
+        "upload_share": 0.726741
+      },
+      "expect_raw_score": 0.648971881,
+      "expect_threat_score": 0.569759,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_beaconing_2",
+      "features": {
+        "out_size_mean": 283.699839,
+        "in_size_mean": 178.89558,
+        "pkt_size_std": 49.134083,
+        "log_pkt_rate": 0.255273,
+        "iat_cv": 0.003508,
+        "upload_share": 0.826314
+      },
+      "expect_raw_score": 0.685151283,
+      "expect_threat_score": 0.690577,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_beaconing_3",
+      "features": {
+        "out_size_mean": 244.1178,
+        "in_size_mean": 162.610367,
+        "pkt_size_std": 42.46683,
+        "log_pkt_rate": 0.447158,
+        "iat_cv": 0.03141,
+        "upload_share": 0.840111
+      },
+      "expect_raw_score": 0.665473847,
+      "expect_threat_score": 0.624866,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_beaconing_4",
+      "features": {
+        "out_size_mean": 255.759641,
+        "in_size_mean": 201.86722,
+        "pkt_size_std": 46.99191,
+        "log_pkt_rate": 0.69897,
+        "iat_cv": 0.043237,
+        "upload_share": 0.960116
+      },
+      "expect_raw_score": 0.675441594,
+      "expect_threat_score": 0.658153,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_beaconing_5",
+      "features": {
+        "out_size_mean": 262.964139,
+        "in_size_mean": 169.566542,
+        "pkt_size_std": 66.461527,
+        "log_pkt_rate": 0.342423,
+        "iat_cv": 0.012603,
+        "upload_share": 0.756193
+      },
+      "expect_raw_score": 0.653023461,
+      "expect_threat_score": 0.583289,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_beaconing_6",
+      "features": {
+        "out_size_mean": 284.872242,
+        "in_size_mean": 198.370445,
+        "pkt_size_std": 50.419537,
+        "log_pkt_rate": 0.447158,
+        "iat_cv": 0.02766,
+        "upload_share": 0.642228
+      },
+      "expect_raw_score": 0.637966163,
+      "expect_threat_score": 0.533006,
+      "expect_anomalous": true
+    },
+    {
+      "name": "attack_beaconing_7",
+      "features": {
+        "out_size_mean": 240.619638,
+        "in_size_mean": 181.216518,
+        "pkt_size_std": 29.186633,
+        "log_pkt_rate": 0.623249,
+        "iat_cv": 0.013701,
+        "upload_share": 0.952192
+      },
+      "expect_raw_score": 0.689246633,
+      "expect_threat_score": 0.704254,
+      "expect_anomalous": true
+    },
+    {
+      "name": "edge_zero_0",
+      "features": {
+        "out_size_mean": 0.0,
+        "in_size_mean": 0.0,
+        "pkt_size_std": 0.0,
+        "log_pkt_rate": 0.0,
+        "iat_cv": 0.0,
+        "upload_share": 0.0
+      },
+      "expect_raw_score": 0.690943996,
+      "expect_threat_score": 0.709922,
+      "expect_anomalous": true
+    },
+    {
+      "name": "edge_extreme_0",
+      "features": {
+        "out_size_mean": 1000000.0,
+        "in_size_mean": 1000000.0,
+        "pkt_size_std": 1000000.0,
+        "log_pkt_rate": 1000000.0,
+        "iat_cv": 1000000.0,
+        "upload_share": 1000000.0
+      },
+      "expect_raw_score": 0.703869723,
+      "expect_threat_score": 0.753087,
+      "expect_anomalous": true
+    }
+  ]
+}

@@ -5,5 +5,14 @@ members = [
     "server/crypto-spike",
     "server/handshake-server"
 ]
+# core/fuzz is its own workspace (own rust-toolchain.toml pinned to nightly,
+# for cargo-fuzz) and deliberately not a member of this stable one.
+exclude = ["core/fuzz"]
 
 resolver = "2"
+
+[profile.profiling]
+# For core/examples/anomaly_bench.rs under samply/cargo-flamegraph: release
+# optimizations with debug symbols kept, so the profile has readable frames.
+inherits = "release"
+debug = true
