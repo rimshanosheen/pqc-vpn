@@ -23,11 +23,11 @@
 //! port) and `crate::state::TunnelConfig` (Week 5) — this module adds the
 //! wire format and the network round trip, not new cryptography.
 //!
-//! What this module deliberately does not do yet: choose *when* to
-//! (re)handshake (that is `rl/`, Week 7) or bring the local WireGuard
-//! interface up with the result (that is `desktop/`'s `TunnelHandle`,
-//! Week 9). [`transport::connect`] hands back a [`crate::state::TunnelConfig`]
-//! and stops there.
+//! What this module deliberately does not do: choose *when* to
+//! (re)handshake (that is `rl/` + `session/`, Week 7) or bring the local
+//! WireGuard interface up with the result (that is `desktop/`'s
+//! `TunnelHandle`, Week 9). [`handshake`] and [`rekey`] (Week 7) hand back
+//! an [`Established`] (tunnel config plus session id) and stop there.
 
 pub mod wire;
 
@@ -36,4 +36,4 @@ mod tags;
 mod transport;
 
 pub use client::{ClientHandshake, HandshakeError, VERIFYING_KEY_LEN};
-pub use transport::{ProtocolError, connect, DEFAULT_TIMEOUT};
+pub use transport::{DEFAULT_TIMEOUT, Established, ProtocolError, connect, handshake, rekey};

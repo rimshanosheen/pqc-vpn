@@ -153,6 +153,22 @@ impl DecisionGate {
         self.in_force
     }
 
+    /// Tells the gate what is *actually* in force after the client failed
+    /// to carry out a decision (the handshake for a change or an escalating
+    /// rekey did not complete). `update` already moved `in_force` on the
+    /// assumption the action would succeed; this puts it back.
+    ///
+    /// Clears any challenger streak, but deliberately keeps the rekey
+    /// cooldown: a failed rekey should not be retried on the very next
+    /// tick, or an unreachable server would get a handshake every 5 s.
+    /// Not part of the Python reference (it has no I/O to fail); called
+    /// only by `core::session`, never during a vector replay.
+    pub fn reset_in_force(&mut self, actual: MlKemLevel) {
+        self.in_force = actual;
+        self.candidate = None;
+        self.streak = 0;
+    }
+
     /// Feed one tick of policy output: the softmax over the ONNX logits
     /// (see [`softmax`]).
     pub fn update(&mut self, probs: &[f32; ACTION_COUNT]) -> Decision {

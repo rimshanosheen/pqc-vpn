@@ -1841,6 +1841,89 @@ every scenario, no errors.
   above but explicitly flagged as not statistically meaningful, rather than
   presented alongside the bootstrapped rates as if it carried equal weight.
 
+## Week 7 (Member 1 track, 2026-11-27) — RL policy wired into the client
+
+`TEAM_TIMELINE_PROPOSAL.md`'s Week 7 task: integrate Member 3's exported
+ONNX policy via the `ort` crate (action count read from the model's output
+shape), wire Member 3's Rust decision-gate port into `core::rl`, then `rl/`
+output into `crypto/`'s algorithm selection.
+
+### Delivered
+
+- **`core::rl::policy`** — loads `ppo_vpn_agent.onnx` with `ort`
+  (2.0.0-rc.15, exact pin; ONNX Runtime downloaded and linked at build
+  time, rustls for the download so Linux needs no OpenSSL headers). The
+  model is embedded with `include_bytes!`, like Layer 3's trees. Checks at
+  load: one input `state`, an output `action_logits`, and the action count
+  read from that output's shape. A count other than the gate's 4 is refused
+  with an error naming the three files to re-copy, rather than letting
+  indices silently change meaning.
+- **`core::rl::agent`** — policy → softmax → `DecisionGate` → one `Action`
+  per tick: `Stay`, `Renegotiate(level)` or `Rekey(level)`. The level in the
+  action is the level the next handshake runs at — this is the
+  `rl/` → `crypto/` link. The connect-time algorithm also comes from the
+  policy (its top-ranked KEM on the first reading), and the gate is built
+  around it, as `INTEGRATION.md` Step 3 asks.
+- **`core::protocol::{handshake, rekey}`** — `connect` only returned a
+  `TunnelConfig`, so there was no way to send `RekeyRequest`. `handshake`
+  now also returns the session id (`Established`), `rekey` sends
+  `RekeyRequest` with it and checks the server kept the same id. Connecting
+  now uses a timeout, so a dead server can't stall a tick for the OS
+  default.
+- **`core::session::VpnSession`** — the control loop. `connect` reads the
+  device, lets the policy pick the algorithm, handshakes, brings the tunnel
+  up. Each `tick(elapsed, threat)`: state vector → agent → carry the action
+  out (`ClientHello` for a change of algorithm — the only legal way to step
+  down, `PROTOCOL.md` §6 — or `RekeyRequest` for a rekey), hot-swap the PSK
+  through `TunnelHandle::rotate_psk`, reset the rekey timer. The session
+  owns no clock or thread; the caller drives ticks.
+- **`DecisionGate::reset_in_force`** (small addition to Member 3's port) —
+  the gate moves `in_force` assuming the handshake will succeed. When it
+  doesn't, the session puts it back. It keeps the rekey cooldown on
+  purpose, so a failed rekey isn't retried against a dead server every 5 s.
+
+### Decisions worth flagging
+
+- **A renegotiation also resets `TIME_SINCE_REKEY`.** The simulator only
+  resets it on the rekey action, but `state_vector.json` defines the field as
+  "wall-clock since last key rotation", and a fresh handshake rotates the
+  keys. Raised here so Member 3 can object if the policy needs the
+  simulator's narrower meaning.
+- **A failed action is not an error.** Network or tunnel failures come back
+  as `Outcome::Failed` in the tick report and the session continues on its
+  old keys; only a policy failure is an `Err`.
+- **Pending on the server side**, not this track: Member 2's Week 7 rate
+  limit could now reject the client's handshakes. The gate's 3-tick confirm
+  and 12-tick rekey cooldown cap the client at well under one handshake per
+  15 s, but the two limits haven't been checked against each other yet.
+
+### Verification
+
+`cargo test -p vpn_core` — 90/90 (52 at Week 6, plus Member 3's anomaly
+and gate tests, plus 20 new):
+
+- **Policy parity** against all 63 `policy_test_vectors.json` states:
+  argmax identical on every vector, and the logits match bit-for-bit
+  (worst |diff| = 0, contract tolerance 1e-5). The embedded `.onnx` is
+  checked against its SHA-256 in `contracts/manifest.json`.
+- **Rekey over a real socket** against `server/handshake-server`'s real
+  connection handler: same session id, same tunnel address, new PSK;
+  escalation 512 → 1024 accepted; a downgrade rekey refused with
+  `ALGO_MISMATCH`; a step down via fresh `ClientHello` accepted for the same
+  peer.
+- **Control loop end to end** (real policy, real gate, real server handler,
+  mock device and tunnel): a steady state touches no network; need rising to
+  cellular + stale keys + threat 1.0 renegotiates to ML-KEM-1024 after
+  exactly 3 ticks, and the server agrees on the level; the same state with
+  the CPU at 90% rekeys instead of moving to the heavier KEM, keeps the
+  session id, and the cooldown holds; a dead server leaves the session on
+  its old algorithm.
+
+The test states were picked by probing the shipped policy over states the
+mock device can produce, each where the policy is decisive (top probability
+≈ 1.00), so a retrain is unlikely to flip them without also changing the
+policy's behaviour in a way worth noticing.
+
 ## How to reproduce
 
 ```bash

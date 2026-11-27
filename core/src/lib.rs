@@ -2,6 +2,7 @@ pub mod anomaly;
 pub mod crypto;
 pub mod protocol;
 pub mod rl;
+pub mod session;
 pub mod state;
 
 pub use state::{
