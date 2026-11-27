@@ -1924,6 +1924,108 @@ mock device can produce, each where the policy is decisive (top probability
 ≈ 1.00), so a retrain is unlikely to flip them without also changing the
 policy's behaviour in a way worth noticing.
 
+## Week 8 (Member 1 track, 2026-11-27) — anomaly layers wired in; first vertical slice
+
+`TEAM_TIMELINE_PROPOSAL.md`'s Week 8 task: integrate Member 3's Rust
+anomaly port into `core::anomaly` and the state pipeline; implement the
+desktop side of the Layer 2 live-input trait; **checkpoint: first full
+vertical slice** — real desktop app, real agent decision, real handshake.
+
+### Delivered
+
+- **`core::state::TrafficSignals` + `TrafficSample`** — the platform trait
+  the plan's risk table called for: per-tick packet rate/size, up/down
+  bytes, new outbound connections / failures / distinct ports, TCP
+  retransmit rate, DNS server, and per-packet records for Layer 3. `core`
+  defines it; `desktop/` reads it.
+- **`StatePipeline::read` + `vector`** — the device is now read once per
+  tick and the same readings feed both the anomaly layers and the state
+  vector (previously `observe` read it itself, which would have meant two
+  pings per tick). `observe` still works as before.
+- **`core::session::threat::ThreatMonitor`** — maps one tick's readings onto
+  Member 3's `AnomalyCombiner` in the reference units (latency ms,
+  packets/s, bytes; 50-tick Layer 1 window). An unreachable probe is fed as
+  the ping's 1 s timeout. A failed DNS read reuses the last known server,
+  so it can't fire the DNS-change signature.
+- **`VpnSession` now owns the anomaly pipeline.** `tick(elapsed)` reads
+  device + traffic → anomaly layers → `THREAT` → policy → gate → handshake.
+  Each `TickReport` carries the combined reading (which layers the CPU gate
+  let run) and the raw traffic sample, so a threat score can be traced to
+  its inputs.
+- **`desktop/src-tauri/src/traffic.rs`** — real `TrafficSignals`: Windows
+  via the IP Helper API (`GetExtendedTcpTable`/`GetTcp6Table`,
+  `GetTcpStatisticsEx`, `GetNetworkParams`), Linux via `/proc/net/tcp{,6}`,
+  `/proc/net/snmp`, `/etc/resolv.conf`; rates from `sysinfo`. The Linux
+  parsers are pure functions tested on every platform.
+- **`desktop/src-tauri/src/vpn.rs` + Connect button** — Connect now runs the
+  real session on a background thread (handshake, then a tick every 5 s),
+  pushing each tick to the UI as a `vpn-event`. The UI has a server form
+  (defaults: the droplet and the pinned `server-vk.hex`) and a live panel:
+  algorithm in force, threat score, layer status, the policy's
+  probabilities, the gate's reason, the action taken.
+- **`examples/vertical_slice.rs`** — the same loop, headless, for
+  terminals and CI.
+
+### The vertical slice, run
+
+Local `handshake-server` (dry-run PSK install) on this Windows laptop,
+client via `cargo run -p desktop --example vertical_slice`, 10 ticks, all
+inputs live: the policy picked ML-KEM-512 at connect, a real handshake
+completed (tunnel IP assigned, PSK installed server-side), and every tick
+ran readings → anomaly → policy → gate → action.
+
+**Not yet done for the checkpoint:** a run against Member 2's droplet, which
+needs the team (it registers a peer on the shared server). Command:
+`cargo run -p desktop --example vertical_slice` with no arguments uses the
+droplet and its pinned key.
+
+### Findings from running it on real data
+
+1. **A bug of mine, found and fixed.** The first run flagged a port scan on
+   an idle laptop. The connection tracker counted short connections that had
+   already finished (`TIME_WAIT`) as failed attempts. Only `SYN_SENT` counts
+   now; regression test added.
+2. **For Member 3: on real Wi-Fi, Layer 2 sits at threat 1.0.** With the
+   bug fixed, this laptop's network still scores 1.0 nearly every tick, from
+   real inputs: system-wide TCP retransmits of 3–39% (the signature's
+   threshold is 10%, saturating at 20%) and ping times swinging past the
+   300 ms cap. The layers aren't wrong about the inputs; the thresholds were
+   set on simulated and loopback traffic. The policy didn't overreact here
+   (it stayed on ML-KEM-512 because the keys were fresh), but over a long
+   session a permanently saturated `THREAT` will push it towards 1024 and
+   rekeys. Worth calibrating against real captures before the Week 9
+   evaluation.
+
+### Known limits
+
+- **Connections are sampled, not traced.** A connection that opens and
+  closes between two snapshots is invisible, including a probe to a closed
+  port. Probes to filtered ports (left in `SYN_SENT`) are seen.
+- **Layer 3 gets no packets on desktop yet.** There's no packet capture
+  (it needs admin rights or Npcap/libpcap), so Layer 3 reports not-ready and
+  adds nothing to the score.
+- **The tunnel is still a placeholder** (`vpn::PendingTunnel`): the PSK is
+  installed on the server, not on a local WireGuard interface. That's
+  Week 9. The client's WireGuard key pair is also generated per session for
+  now; Week 9 has to persist it.
+- **macOS** gets the `sysinfo` numbers only (out of scope per the plan).
+
+### Verification
+
+- `cargo test -p vpn_core` — 96/96 (6 new: threat mapping, layer gating,
+  DNS-read failure, and the session tests now drive `THREAT` through the
+  real anomaly layers from traffic inputs).
+- `cargo test -p desktop` — 17/17 (11 new: connection tracker incl. the
+  `TIME_WAIT` regression, retransmit maths, `/proc` parsers, config
+  validation, plus one test that reads this machine's live traffic).
+- `cargo test -p handshake-server` — 22 + 8, unchanged.
+- `npm run build` in `desktop/` — the TypeScript type-checks and builds.
+
+Build note for Windows: building `desktop` writes a ~1.2 GB static library
+(Tauri's mobile crate types with ONNX Runtime linked in). On a nearly full
+disk, run `cargo clean` first; `CARGO_INCREMENTAL=0` and `--jobs 2` help on
+low-RAM machines.
+
 ## How to reproduce
 
 ```bash

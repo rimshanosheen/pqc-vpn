@@ -2,14 +2,16 @@
 //! [`TICK_SECONDS`](crate::rl::gate::TICK_SECONDS) seconds.
 //!
 //! ```text
-//!   DeviceState ──► StatePipeline ──► rl::Agent ──► Action ──► protocol ──► TunnelHandle
-//!                     (7-dim)        (policy+gate)  (Stay /     (handshake    (bring_up /
-//!                                                    Renegotiate / or rekey)    rotate_psk)
-//!                                                    Rekey)
+//!   DeviceState ──┬──► StatePipeline ──► rl::Agent ──► Action ──► protocol ──► TunnelHandle
+//!                 │     (7-dim)  ▲      (policy+gate)  (Stay /     (handshake    (bring_up /
+//!   TrafficSignals┴► ThreatMonitor ─┘                   Renegotiate / or rekey)  rotate_psk)
+//!                  (anomaly L1+L2+L3 → THREAT)          Rekey)
 //! ```
 //!
 //! This is where `rl/`'s output becomes `crypto/`'s algorithm selection:
 //! the level in each [`Action`] is the level the next handshake runs at.
+//! Since Week 8 the `THREAT` dimension comes from Member 3's anomaly layers
+//! fed by live readings ([`threat`]), not from the caller.
 //!
 //! `VpnSession` owns no clock and no thread. The caller (the desktop app,
 //! or a test) decides when to call [`VpnSession::tick`] and reports how
@@ -19,10 +21,17 @@
 use std::fmt;
 use std::time::Duration;
 
+pub mod threat;
+
+use crate::anomaly::CombinedReading;
 use crate::crypto::MlKemLevel;
 use crate::protocol::{self, Established, ProtocolError};
 use crate::rl::{Action, Agent, AgentStep, Policy, PolicyError};
-use crate::state::{DeviceState, StatePipeline, TunnelError, TunnelHandle};
+use crate::state::{
+    DeviceState, StatePipeline, TrafficSample, TrafficSignals, TunnelError, TunnelHandle,
+};
+
+pub use threat::ThreatMonitor;
 
 /// Where the handshake server is and how to trust it.
 #[derive(Clone)]
@@ -125,15 +134,23 @@ pub enum Outcome {
 #[derive(Debug, Clone)]
 pub struct TickReport {
     pub step: AgentStep,
+    /// The anomaly layers' reading that became `THREAT` in `step.state`,
+    /// including which layers the CPU gate let run.
+    pub threat: CombinedReading,
+    /// The raw traffic facts the anomaly layers scored this tick, so a
+    /// high threat score can be traced to its inputs.
+    pub traffic: TrafficSample,
     pub outcome: Outcome,
     /// The algorithm actually in use after this tick.
     pub in_force: MlKemLevel,
 }
 
 /// A connected client session driven by the RL agent.
-pub struct VpnSession<D: DeviceState, T: TunnelHandle> {
+pub struct VpnSession<D: DeviceState, S: TrafficSignals, T: TunnelHandle> {
     endpoint: ServerEndpoint,
     pipeline: StatePipeline<D>,
+    traffic: S,
+    threat: ThreatMonitor,
     tunnel: T,
     agent: Agent,
     session_id: [u8; 16],
@@ -141,20 +158,22 @@ pub struct VpnSession<D: DeviceState, T: TunnelHandle> {
     assigned_ip: std::net::Ipv4Addr,
 }
 
-impl<D: DeviceState, T: TunnelHandle> VpnSession<D, T> {
-    /// Reads the device once, lets the policy pick the connect algorithm,
-    /// runs the first handshake, and brings the tunnel up.
-    ///
-    /// `threat_score` is the anomaly score for this first reading.
+impl<D: DeviceState, S: TrafficSignals, T: TunnelHandle> VpnSession<D, S, T> {
+    /// Takes a first reading (device + traffic → anomaly → state vector),
+    /// lets the policy pick the connect algorithm from it, runs the first
+    /// handshake, and brings the tunnel up.
     pub fn connect(
         endpoint: ServerEndpoint,
         device: D,
+        traffic: S,
         tunnel: T,
         policy: Policy,
-        threat_score: f32,
     ) -> Result<Self, SessionError> {
         let pipeline = StatePipeline::new(device);
-        let state = pipeline.observe(threat_score);
+        let mut threat = ThreatMonitor::new();
+        let readings = pipeline.read();
+        let reading = threat.update(&readings, &traffic.sample());
+        let state = pipeline.vector(&readings, reading.threat_score as f32);
         let (agent, level) = Agent::for_connect(policy, &state)?;
 
         let established = endpoint.handshake(level)?;
@@ -163,6 +182,8 @@ impl<D: DeviceState, T: TunnelHandle> VpnSession<D, T> {
         Ok(Self {
             endpoint,
             pipeline,
+            traffic,
+            threat,
             tunnel,
             agent,
             session_id: established.session_id,
@@ -182,22 +203,34 @@ impl<D: DeviceState, T: TunnelHandle> VpnSession<D, T> {
         self.session_id
     }
 
+    /// The in-tunnel address the server assigned.
+    pub fn assigned_ip(&self) -> std::net::Ipv4Addr {
+        self.assigned_ip
+    }
+
     /// Borrows the tunnel handle.
     pub fn tunnel(&self) -> &T {
         &self.tunnel
     }
 
     /// One control-loop tick. `elapsed` is the time since the previous
-    /// tick (or since connect); `threat_score` is this tick's anomaly score.
+    /// tick (or since connect).
+    ///
+    /// Reads the device and traffic once, scores them through the anomaly
+    /// layers, builds the state vector with that score as `THREAT`, runs
+    /// the agent, and carries out its action.
     ///
     /// Only a policy failure is an `Err`: a network or tunnel failure is
     /// reported in the returned [`TickReport::outcome`].
-    pub fn tick(&mut self, elapsed: Duration, threat_score: f32) -> Result<TickReport, SessionError> {
+    pub fn tick(&mut self, elapsed: Duration) -> Result<TickReport, SessionError> {
         self.pipeline.advance(elapsed);
-        let state = self.pipeline.observe(threat_score);
+        let readings = self.pipeline.read();
+        let traffic = self.traffic.sample();
+        let threat = self.threat.update(&readings, &traffic);
+        let state = self.pipeline.vector(&readings, threat.threat_score as f32);
         let step = self.agent.step(&state)?;
         let outcome = self.carry_out(step.action);
-        Ok(TickReport { step, outcome, in_force: self.in_force })
+        Ok(TickReport { step, threat, traffic, outcome, in_force: self.in_force })
     }
 
     fn carry_out(&mut self, action: Action) -> Outcome {

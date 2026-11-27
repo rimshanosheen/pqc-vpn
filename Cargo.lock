@@ -908,6 +908,8 @@ dependencies = [
 name = "desktop"
 version = "0.1.0"
 dependencies = [
+ "hex",
+ "rand 0.8.8",
  "serde",
  "serde_json",
  "sysinfo",
@@ -915,6 +917,8 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-opener",
  "vpn_core",
+ "windows-sys 0.59.0",
+ "x25519-dalek",
 ]
 
 [[package]]

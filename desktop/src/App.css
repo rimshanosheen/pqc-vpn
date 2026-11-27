@@ -147,6 +147,115 @@ h1 {
   text-align: right;
 }
 
+/* Week 8: server form and the live agent panel. */
+.container {
+  padding-top: 6vh;
+  padding-bottom: 4vh;
+}
+
+.device-panel {
+  width: min(520px, 90vw);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+  font-size: 0.85em;
+  color: #6b6b6b;
+  margin-bottom: 0.6em;
+}
+
+.field input,
+.field textarea {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.95em;
+  padding: 0.4em 0.5em;
+  border-radius: 6px;
+  border: 1px solid #d0d0d0;
+  resize: vertical;
+}
+
+.pill {
+  font-size: 0.8em;
+  font-weight: 600;
+  padding: 0.15em 0.7em;
+  border-radius: 999px;
+  background-color: #396cd8;
+  color: #ffffff;
+}
+
+.small {
+  font-size: 0.85em;
+  font-weight: 400 !important;
+}
+
+.bars {
+  margin-top: 0.8em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  font-size: 0.8em;
+}
+
+.bar {
+  display: grid;
+  grid-template-columns: 7em 1fr 3em;
+  align-items: center;
+  gap: 0.6em;
+}
+
+.bar span:last-child {
+  text-align: right;
+}
+
+.bar__track {
+  height: 0.55em;
+  border-radius: 999px;
+  background-color: #e4e4e4;
+  overflow: hidden;
+}
+
+.bar__fill {
+  height: 100%;
+  background-color: #396cd8;
+}
+
+.state-row {
+  margin-top: 0.8em;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3em 0.9em;
+  font-size: 0.75em;
+  color: #6b6b6b;
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+.log {
+  margin: 0;
+  padding-left: 1.1em;
+  font-size: 0.78em;
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  .field input,
+  .field textarea {
+    background-color: #1f1f1f;
+    color: #f6f6f6;
+    border-color: #444;
+  }
+
+  .bar__track {
+    background-color: #444;
+  }
+
+  .state-row,
+  .field {
+    color: #b3b3b3;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     color: #f6f6f6;

@@ -96,6 +96,86 @@ pub trait DeviceState {
     fn connection_type(&self) -> ConnectionType;
 }
 
+/// One tick of network-traffic facts for the anomaly layers
+/// (`core::anomaly`), read by the platform.
+///
+/// This is the "platform trait in `core`" `TEAM_TIMELINE_PROPOSAL.md` §7
+/// calls for (Member 1, Week 8): Layer 2's live inputs — distinct
+/// destination ports, retransmit rate, DNS server — are platform-specific,
+/// so `core` defines what it needs and `desktop/` (later a mobile crate)
+/// reads it. Every field is a raw, per-tick fact covering the time since
+/// the previous [`TrafficSignals::sample`] call.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct TrafficSample {
+    /// Packets per second, both directions (Layer 1).
+    pub packet_rate: f64,
+    /// Mean packet size in bytes, both directions (Layer 1).
+    pub mean_packet_size: f64,
+    /// Bytes per second sent (Layer 2 exfiltration check).
+    pub upload_bytes_per_sec: f64,
+    /// Bytes per second received (Layer 2 exfiltration check).
+    pub download_bytes_per_sec: f64,
+    /// Distinct remote ports among the outbound connections opened this
+    /// tick (Layer 2 port-scan check).
+    pub distinct_dest_ports: u32,
+    /// Outbound connections opened this tick.
+    pub connection_attempts: u32,
+    /// Of those, how many never got established.
+    pub failed_attempts: u32,
+    /// TCP segments retransmitted / segments sent this tick, in `[0, 1]`.
+    pub retransmit_rate: f64,
+    /// The system's primary DNS server, `None` if it could not be read.
+    pub dns_server: Option<String>,
+    /// Per-packet records for Layer 3. Empty when the platform has no
+    /// packet capture, in which case Layer 3 reports not-ready and adds
+    /// nothing to the threat score (it never fakes a reading).
+    pub packets: Vec<PacketRecord>,
+}
+
+/// One captured packet, for Layer 3's traffic-shape features.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PacketRecord {
+    /// Size in bytes.
+    pub size: f64,
+    /// Arrival time in seconds, on any monotonic clock.
+    pub time: f64,
+    /// `true` when sent by this host.
+    pub outbound: bool,
+}
+
+/// Live traffic facts for the anomaly layers. See [`TrafficSample`].
+///
+/// `sample` is called once per tick and reports what happened since the
+/// previous call, so implementations keep their own previous counters.
+pub trait TrafficSignals {
+    fn sample(&self) -> TrafficSample;
+}
+
+/// One reading of every [`DeviceState`] value, taken once per tick so the
+/// anomaly layers and the state vector see the same numbers (and the
+/// latency probe runs once, not twice).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct DeviceReadings {
+    pub cpu_load: f32,
+    pub ram_available_fraction: f32,
+    pub latency: Option<Duration>,
+    pub upload_rate_bytes_per_sec: f64,
+    pub connection_type: ConnectionType,
+}
+
+impl DeviceReadings {
+    /// Reads every value from `device` once.
+    pub fn read<D: DeviceState + ?Sized>(device: &D) -> Self {
+        Self {
+            cpu_load: device.cpu_load(),
+            ram_available_fraction: device.ram_available_fraction(),
+            latency: device.latency(),
+            upload_rate_bytes_per_sec: device.upload_rate_bytes_per_sec(),
+            connection_type: device.connection_type(),
+        }
+    }
+}
+
 /// Normalization caps applied by [`StatePipeline`].
 ///
 /// The defaults reproduce `state_observer.py` exactly. They are reasoned
@@ -175,20 +255,32 @@ impl<D: DeviceState> StatePipeline<D> {
     /// `threat_score` comes from `core::anomaly` and is clamped into
     /// `[0, 1]` here, matching `state_observer.py::read_state`.
     pub fn observe(&self, threat_score: f32) -> [f32; STATE_DIM] {
+        self.vector(&self.read(), threat_score)
+    }
+
+    /// Reads the device once. Pair with [`vector`](Self::vector) when the
+    /// same readings also feed something else that tick (the anomaly
+    /// layers).
+    pub fn read(&self) -> DeviceReadings {
+        DeviceReadings::read(&self.device)
+    }
+
+    /// Builds the normalized state vector from readings already taken.
+    pub fn vector(&self, readings: &DeviceReadings, threat_score: f32) -> [f32; STATE_DIM] {
         let mut vector = [0.0_f32; STATE_DIM];
 
-        vector[CPU_LOAD] = self.device.cpu_load();
+        vector[CPU_LOAD] = readings.cpu_load;
 
-        vector[RAM_AVAIL] = self.device.ram_available_fraction();
+        vector[RAM_AVAIL] = readings.ram_available_fraction;
 
-        vector[LATENCY] = normalize_latency(self.device.latency(), self.caps.latency_cap);
+        vector[LATENCY] = normalize_latency(readings.latency, self.caps.latency_cap);
 
         vector[UPLOAD] = normalize_rate(
-            self.device.upload_rate_bytes_per_sec(),
+            readings.upload_rate_bytes_per_sec,
             self.caps.upload_cap_bytes_per_sec,
         );
 
-        vector[CONN_TYPE] = self.device.connection_type().score();
+        vector[CONN_TYPE] = readings.connection_type.score();
 
         vector[TIME_SINCE_REKEY] =
             normalize_duration(self.time_since_rekey, self.caps.rekey_interval_cap);
@@ -332,8 +424,8 @@ pub mod mock {
     use std::time::Duration;
 
     use super::{
-        ConnectionType, DeviceState, SessionPsk, TunnelConfig, TunnelError, TunnelHandle,
-        TunnelStatus,
+        ConnectionType, DeviceState, SessionPsk, TrafficSample, TrafficSignals, TunnelConfig,
+        TunnelError, TunnelHandle, TunnelStatus,
     };
 
     /// A [`DeviceState`] with every reading set explicitly.
@@ -377,6 +469,18 @@ pub mod mock {
 
         fn connection_type(&self) -> ConnectionType {
             self.connection_type
+        }
+    }
+
+    /// A [`TrafficSignals`] that returns the same sample every tick.
+    #[derive(Debug, Clone, Default)]
+    pub struct MockTrafficSignals {
+        pub sample: TrafficSample,
+    }
+
+    impl TrafficSignals for MockTrafficSignals {
+        fn sample(&self) -> TrafficSample {
+            self.sample.clone()
         }
     }
 
