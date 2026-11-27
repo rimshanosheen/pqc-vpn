@@ -338,3 +338,189 @@ fn over_tcp_rekey_rejects_downgrade() {
     assert_eq!(rec.installs.lock().unwrap().len(), 1, "the downgrade must not be installed");
     assert!(rec.removals.lock().unwrap().is_empty());
 }
+
+// ---------------------------------------------------------------------------
+// Week 7 — replay protection and rate limiting (PROTOCOL.md §7), driven through
+// the real `server::serve` accept loop, so admission happens exactly where it
+// does in production. (Every test above uses `handle_connection` directly —
+// the unguarded path — and a fixed nonce, which stays legal there.)
+// ---------------------------------------------------------------------------
+
+use std::net::SocketAddr;
+use std::time::Instant;
+
+use handshake_server::guard::{Guard, GuardConfig};
+use handshake_server::wire::ClientHello;
+
+/// Start `server::serve` on a loopback port in the background with `cfg`.
+/// (The accept thread runs until the test process exits.)
+fn guarded_server(cfg: GuardConfig) -> (SocketAddr, Arc<ServerContext>, RecordingInstaller, Arc<Guard>) {
+    let (ctx, rec) = recording_ctx();
+    let guard = Arc::new(Guard::new(cfg));
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    let (c, g) = (Arc::clone(&ctx), Arc::clone(&guard));
+    std::thread::spawn(move || server::serve(listener, c, g));
+    (addr, ctx, rec, guard)
+}
+
+fn connect_to(addr: SocketAddr) -> TcpStream {
+    let s = TcpStream::connect(addr).unwrap();
+    s.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+    s
+}
+
+/// Send `first` (a ClientHello or RekeyRequest), then finish the handshake.
+/// `Ok(session_id)` on success, `Err(code)` on any server `Error`.
+fn attempt(
+    addr: SocketAddr,
+    ctx: &ServerContext,
+    state: client_handshake::ClientState,
+    first: Message,
+) -> Result<[u8; 16], u8> {
+    let mut s = connect_to(addr);
+    first.write(&mut s).unwrap();
+    let sh = match Message::read(&mut s).unwrap() {
+        Message::ServerHello(sh) => sh,
+        Message::Error(e) => return Err(e.code),
+        other => panic!("expected ServerHello, got {other:?}"),
+    };
+    let (_, finish, _) = state.finish(&sh, &ctx.identity.verifying_key_bytes()).unwrap();
+    Message::ClientFinish(finish).write(&mut s).unwrap();
+    match Message::read(&mut s).unwrap() {
+        Message::ServerFinish(sf) => Ok(sf.session_id),
+        Message::Error(e) => Err(e.code),
+        other => panic!("expected ServerFinish, got {other:?}"),
+    }
+}
+
+/// A full handshake with a fresh random nonce.
+fn fresh_handshake(addr: SocketAddr, ctx: &ServerContext, wg_pub: [u8; 32]) -> Result<[u8; 16], u8> {
+    let state = client_handshake::start(AlgoCode::MlKem768, rand::random(), wg_pub);
+    let hello = Message::ClientHello(state.hello().clone());
+    attempt(addr, ctx, state, hello)
+}
+
+/// Connect and read the server's first frame without sending anything — for
+/// connections the accept loop refuses before reading.
+fn refused_code(addr: SocketAddr) -> u8 {
+    let mut s = connect_to(addr);
+    match Message::read(&mut s).unwrap() {
+        Message::Error(e) => e.code,
+        other => panic!("expected Error, got {other:?}"),
+    }
+}
+
+/// Send `msg` verbatim and return the server's reply code (a replay is
+/// refused on message 1, so no ServerHello is expected).
+fn replay_code(addr: SocketAddr, msg: Message) -> u8 {
+    let mut s = connect_to(addr);
+    msg.write(&mut s).unwrap();
+    match Message::read(&mut s).unwrap() {
+        Message::Error(e) => e.code,
+        other => panic!("replay was not refused: got {other:?}"),
+    }
+}
+
+fn wait_for(mut cond: impl FnMut() -> bool) {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while !cond() {
+        assert!(Instant::now() < deadline, "condition not reached within 5s");
+        std::thread::sleep(Duration::from_millis(10));
+    }
+}
+
+#[test]
+fn guarded_replayed_client_hello_is_refused() {
+    let (addr, ctx, rec, _g) = guarded_server(GuardConfig::default());
+    let wg_pub = [0x71; 32];
+
+    // An eavesdropper records a real client's ClientHello...
+    let state = client_handshake::start(AlgoCode::MlKem768, rand::random(), wg_pub);
+    let recorded: ClientHello = state.hello().clone();
+    assert!(attempt(addr, &ctx, state, Message::ClientHello(recorded.clone())).is_ok());
+
+    // ...and replays it byte-for-byte.
+    assert_eq!(replay_code(addr, Message::ClientHello(recorded)), 0x06);
+    assert_eq!(rec.installs.lock().unwrap().len(), 1, "the replay must not reach `wg set`");
+    assert_eq!(ctx.registry.len(), 1);
+}
+
+#[test]
+fn guarded_replay_of_an_abandoned_hello_is_refused_too() {
+    // The nonce is recorded on receipt, not on completion: a hello whose
+    // handshake was never finished still cannot be replayed.
+    let (addr, _ctx, rec, _g) = guarded_server(GuardConfig::default());
+    let state = client_handshake::start(AlgoCode::MlKem512, rand::random(), [0x72; 32]);
+    let hello = state.hello().clone();
+    {
+        let mut s = connect_to(addr);
+        Message::ClientHello(hello.clone()).write(&mut s).unwrap();
+        assert!(matches!(Message::read(&mut s).unwrap(), Message::ServerHello(_)));
+        // dropped without sending ClientFinish
+    }
+    assert_eq!(replay_code(addr, Message::ClientHello(hello)), 0x06);
+    assert!(rec.installs.lock().unwrap().is_empty());
+}
+
+#[test]
+fn guarded_rekey_reusing_a_nonce_is_refused() {
+    let (addr, ctx, rec, _g) = guarded_server(GuardConfig::default());
+    let wg_pub = [0x73; 32];
+    let state = client_handshake::start(AlgoCode::MlKem768, rand::random(), wg_pub);
+    let hello = state.hello().clone();
+    let session_id = attempt(addr, &ctx, state, Message::ClientHello(hello.clone())).unwrap();
+
+    // A RekeyRequest that wraps the already-used hello (same client_nonce).
+    let replayed = Message::RekeyRequest(RekeyRequest { session_id, hello });
+    assert_eq!(replay_code(addr, replayed), 0x06);
+    assert_eq!(rec.installs.lock().unwrap().len(), 1);
+
+    // A genuine rekey with a fresh nonce still goes through.
+    let state = client_handshake::start(AlgoCode::MlKem1024, rand::random(), wg_pub);
+    let rekey = Message::RekeyRequest(RekeyRequest { session_id, hello: state.hello().clone() });
+    assert_eq!(attempt(addr, &ctx, state, rekey), Ok(session_id));
+    assert_eq!(rec.installs.lock().unwrap().len(), 2);
+    assert!(rec.removals.lock().unwrap().is_empty());
+}
+
+#[test]
+fn guarded_rate_limit_refuses_after_the_burst() {
+    let cfg = GuardConfig { rate_burst: 3, rate_per_minute: 0, ..GuardConfig::default() };
+    let (addr, ctx, rec, _g) = guarded_server(cfg);
+
+    for i in 0..3u8 {
+        assert!(fresh_handshake(addr, &ctx, [0x80 + i; 32]).is_ok(), "handshake {i} within burst");
+    }
+    assert_eq!(refused_code(addr), 0x07, "4th connection from the same IP is rate limited");
+    assert_eq!(rec.installs.lock().unwrap().len(), 3);
+}
+
+#[test]
+fn guarded_connection_cap_refuses_then_recovers() {
+    let cfg = GuardConfig { max_concurrent: 1, ..GuardConfig::default() };
+    let (addr, ctx, _rec, guard) = guarded_server(cfg);
+
+    // A client that connects and goes silent holds the only slot.
+    let silent = connect_to(addr);
+    wait_for(|| guard.active_connections() == 1);
+    assert_eq!(refused_code(addr), 0x07, "second concurrent connection is refused");
+
+    // Once it disconnects the slot is released and service resumes.
+    drop(silent);
+    wait_for(|| guard.active_connections() == 0);
+    assert!(fresh_handshake(addr, &ctx, [0x90; 32]).is_ok());
+    wait_for(|| guard.active_connections() == 0);
+}
+
+#[test]
+fn guarded_normal_clients_are_unaffected() {
+    // Distinct legitimate handshakes (fresh nonces) inside the default burst
+    // all succeed — the guard is invisible to a well-behaved client.
+    let (addr, ctx, _rec, guard) = guarded_server(GuardConfig::default());
+    for i in 0..10u8 {
+        assert!(fresh_handshake(addr, &ctx, [0xA0 + i; 32]).is_ok());
+    }
+    assert_eq!(ctx.registry.len(), 10);
+    assert_eq!(guard.nonces.len(), 10);
+}

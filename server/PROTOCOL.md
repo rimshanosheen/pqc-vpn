@@ -29,6 +29,7 @@ since Week 2. `VER` is still `0x01`; no incompatible change has been made.
 | Week 3 | `ServerFinish` gained `server_wg_pubkey (32)`, `assigned_ip (4)`, `wg_port (2)` (§4.5) so the client needs no out-of-band tunnel config | **append-only** to one message; a `ServerFinish` reader written to the Week 2 layout would need updating, but no client existed yet |
 | Week 4 | No protocol change (containerisation only). This section added. | — |
 | Week 5 | New `Error` code `0x09 CAPACITY` (§4.7). Rekey lookup clarified: by `(client_wg_pubkey, session_id)` pair, not `session_id` alone (§4.6). `allowed-ips` always sent on `wg set` (§4.5). | additive error code; no wire-format change |
+| Week 7 | §7 replay cache and rate limiting now **enforced** (server-local). A reused `client_nonce` gets `Error(0x06 AUTH_FAILED)`; rate/connection limits get `Error(0x07 RATE_LIMITED)`, which may arrive as the *first* frame before the client sends anything. | no wire-format change, no new codes; a conforming client with random nonces never sees `0x06` from this |
 | Week 4 checkpoint sign-off | Status DRAFT → **FROZEN v1**. §8 resolved: nonces and HKDF now live in `vpn_core` and the server uses them (Q1/Q2), identity seed persistence in `vpn_core` (Q7), `REKEY_ESCALATES` approved (Q6), so §4.6 / §6 accept an equal-or-stronger rekey `algo`. | no wire-format change; every frame, transcript, KDF and MAC value in `handshake-vectors.json` unchanged (only its `protocol` status string updated) |
 
 **For Member 1:** build the client side of `core/protocol/` against this document
@@ -308,15 +309,35 @@ the client points its WireGuard at the new PSK.
 
 ---
 
-## 7. Replay & rate limiting (fields defined now, enforcement in Week 7)
+## 7. Replay & rate limiting (enforced since Week 7)
 
 - `client_nonce` / `server_nonce` make every transcript unique, so a recorded
   `ServerHello` cannot be replayed into a new handshake (its signature is bound
-  to the client's fresh nonce and ephemeral keys).
-- Week 7 adds: a server-side cache of recently seen `client_nonce` values
-  (reject duplicates within a 2-minute window) and a per-source-IP handshake
-  rate limit → `Error(RATE_LIMITED)`.
-- No protocol change is needed to turn these on; they are server-local.
+  to the client's fresh nonce and ephemeral keys). Symmetrically, a recorded
+  `ClientHello` / `RekeyRequest` can never *complete*: the replayer lacks the
+  client's ephemeral secrets and cannot produce a valid `ClientFinish`.
+- The server enforces three server-local checks (`handshake-server`'s `guard`
+  module), all before any ML-KEM / ML-DSA work:
+
+  | check | when | default | on failure |
+  |---|---|---|---|
+  | `client_nonce` replay cache | message 1 (`ClientHello`, or the hello inside `RekeyRequest`) | 2-minute window | `Error(0x06 AUTH_FAILED)` |
+  | per-source-IP token bucket | on accept | burst 20, refill 30/min | `Error(0x07 RATE_LIMITED)` |
+  | concurrent connection cap | on accept | 64 | `Error(0x07 RATE_LIMITED)` |
+
+  The nonce is recorded on receipt, not on completion, so even an abandoned
+  hello cannot be replayed. A reused nonce maps to `AUTH_FAILED` because the
+  frozen v1 code table has no replay code and the handshake cannot be shown
+  to be fresh; a client using 32 random bytes per hello never triggers it.
+  The rate-limit defaults are deliberately generous: several clients behind
+  one NAT share one source IP. All are overridable
+  (`--replay-window-secs`, `--rate-burst`, `--rate-per-min`, `--max-conns`).
+- **Client note:** a refused-on-accept connection receives the `Error` frame
+  *before* sending anything. A client should read whatever the server sends
+  rather than assume its own `ClientHello` write succeeds first. `0x07` is
+  transient — retry with backoff.
+- Both tracking tables are size-bounded; when full of unexpired entries the
+  server refuses new handshakes (`0x07`) rather than grow without limit.
 
 ---
 

@@ -3,16 +3,21 @@
 //! Blocking, one thread per connection, one handshake (or rekey) per connection.
 //! A completed handshake updates the [`Registry`] and installs the derived PSK
 //! into WireGuard.
+//!
+//! Since Week 7 the accept loop runs every connection through a [`Guard`]
+//! (`PROTOCOL.md` §7): a concurrency cap and per-IP rate limit at accept time,
+//! and a `client_nonce` replay check on message 1 — all before any PQC work.
 
 use std::collections::HashSet;
-use std::net::{TcpListener, TcpStream};
+use std::net::{IpAddr, TcpListener, TcpStream};
 use std::sync::Arc;
-use std::time::{Duration, SystemTime};
+use std::time::{Duration, Instant, SystemTime};
 
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as B64;
 
 use crate::error::HandshakeError;
+use crate::guard::{Guard, Rejection};
 use crate::handshake;
 use crate::identity::ServerIdentity;
 use crate::kdf;
@@ -94,21 +99,64 @@ pub fn spawn_idle_sweep(ctx: Arc<ServerContext>, timeout: Duration) {
     });
 }
 
+/// Background thread: every minute, drop expired replay-cache entries and
+/// fully-refilled rate-limit buckets so both tables stay small.
+pub fn spawn_guard_prune(guard: Arc<Guard>) {
+    std::thread::spawn(move || loop {
+        std::thread::sleep(SWEEP_INTERVAL);
+        guard.prune(Instant::now());
+    });
+}
+
+/// How long the accept loop will spend writing an `Error` frame to a refused
+/// connection. The frame is a few dozen bytes and fits in the socket buffer,
+/// so this only matters for a peer that never reads — it must not stall
+/// `accept` for everyone else.
+const REFUSAL_WRITE_TIMEOUT: Duration = Duration::from_millis(200);
+
 /// Accept loop. Returns only if the listener errors fatally.
-pub fn serve(listener: TcpListener, ctx: Arc<ServerContext>) {
+///
+/// Each connection must pass [`Guard::admit`] (concurrency cap, then the
+/// per-IP rate limit) before a handler thread is spawned for it. A refused
+/// connection gets `Error(RATE_LIMITED)` and is closed from the accept thread.
+pub fn serve(listener: TcpListener, ctx: Arc<ServerContext>, guard: Arc<Guard>) {
     for stream in listener.incoming() {
-        match stream {
-            Ok(s) => {
-                let ctx = Arc::clone(&ctx);
-                std::thread::spawn(move || {
-                    if let Err(e) = handle_connection(s, &ctx) {
-                        eprintln!("connection error: {e}");
-                    }
-                });
+        let s = match stream {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("accept error: {e}");
+                continue;
             }
-            Err(e) => eprintln!("accept error: {e}"),
-        }
+        };
+        let ip = match s.peer_addr() {
+            Ok(a) => a.ip(),
+            Err(e) => {
+                eprintln!("accept: no peer address: {e}");
+                continue;
+            }
+        };
+        let permit = match guard.admit(ip, Instant::now()) {
+            Ok(p) => p,
+            Err(r) => {
+                refuse(s, ip, r);
+                continue;
+            }
+        };
+        let ctx = Arc::clone(&ctx);
+        let guard = Arc::clone(&guard);
+        std::thread::spawn(move || {
+            let _permit = permit; // concurrency slot held until this thread ends
+            if let Err(e) = handle_connection_guarded(s, &ctx, Some(&guard)) {
+                eprintln!("connection error from {ip}: {e}");
+            }
+        });
     }
+}
+
+fn refuse(mut s: TcpStream, ip: IpAddr, r: Rejection) {
+    eprintln!("REFUSED    {ip}: {r}");
+    let _ = s.set_write_timeout(Some(REFUSAL_WRITE_TIMEOUT));
+    let _ = reject(&mut s, r.protocol_code(), r.message());
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -129,7 +177,20 @@ fn registry_reject_code(e: &RegistryError) -> (u8, &'static str) {
     }
 }
 
-pub fn handle_connection(mut stream: TcpStream, ctx: &ServerContext) -> Result<ConnResult, ConnError> {
+/// Handle one connection with no [`Guard`] — no replay or rate-limit checks.
+/// Kept for callers (tests, `vpn_core`'s loopback tests) that drive a single
+/// connection directly; the real accept loop uses [`handle_connection_guarded`].
+pub fn handle_connection(stream: TcpStream, ctx: &ServerContext) -> Result<ConnResult, ConnError> {
+    handle_connection_guarded(stream, ctx, None)
+}
+
+/// Handle one connection. With a `guard`, the `client_nonce` of message 1 is
+/// checked against the replay cache before any ML-KEM / ML-DSA work is done.
+pub fn handle_connection_guarded(
+    mut stream: TcpStream,
+    ctx: &ServerContext,
+    guard: Option<&Guard>,
+) -> Result<ConnResult, ConnError> {
     stream.set_read_timeout(Some(CONN_TIMEOUT))?;
     stream.set_write_timeout(Some(CONN_TIMEOUT))?;
 
@@ -146,6 +207,17 @@ pub fn handle_connection(mut stream: TcpStream, ctx: &ServerContext) -> Result<C
             return Err(e.into());
         }
     };
+
+    // --- replay check (PROTOCOL.md §7) — before any expensive work ---
+    if let Some(g) = guard {
+        if let Err(r) = g.check_nonce(&hello.client_nonce, Instant::now()) {
+            let peer = stream.peer_addr().map(|a| a.ip().to_string()).unwrap_or_default();
+            eprintln!("REFUSED    {peer}: {r}");
+            let code = r.protocol_code();
+            reject(&mut stream, code, r.message())?;
+            return Ok(ConnResult::Rejected { code });
+        }
+    }
 
     let session_id = rekey_session.unwrap_or_else(|| rand::random());
     let server_nonce: [u8; 32] = rand::random();

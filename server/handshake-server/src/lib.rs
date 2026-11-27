@@ -9,12 +9,14 @@
 //! - [`handshake`]       — server side: `ClientHello` → `ServerHello`
 //! - [`client_handshake`]— client side, for the test client and vector emitter
 //! - [`registry`]        — multi-peer registry (session ↔ wg peer ↔ address), persisted
+//! - [`guard`]           — replay cache + per-IP rate limit + connection cap (§7, Week 7)
 //!
 //! The cryptographic primitives are all `vpn_core::crypto` (Member 1's port).
 //! This crate adds only the wire protocol around them.
 
 pub mod client_handshake;
 pub mod error;
+pub mod guard;
 pub mod handshake;
 pub mod identity;
 pub mod kdf;

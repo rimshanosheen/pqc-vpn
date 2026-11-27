@@ -5,11 +5,15 @@
 //!                    [--wg-interface NAME] [--wg-port N] [--tunnel-cidr CIDR]
 //!                    [--wg-pubkey BASE64]
 //!                    [--peers-file PATH] [--max-peers N] [--idle-timeout-secs N]
+//!                    [--replay-window-secs N] [--rate-burst N] [--rate-per-min N]
+//!                    [--max-conns N]
 //!
 //! defaults: --bind 0.0.0.0:51821  --identity ./server-identity.seed
 //!           --wg-port 51820       --tunnel-cidr 10.8.0.0/24
 //!           --peers-file <identity dir>/peers.json  --max-peers 64
 //!           --idle-timeout-secs 0  (0 = no idle eviction)
+//!           --replay-window-secs 120  --rate-burst 20  --rate-per-min 30
+//!           --max-conns 64           (Week 7, PROTOCOL.md §7)
 //!
 //! With `--wg-interface` the derived PSK is installed via `wg set` (needs
 //! CAP_NET_ADMIN). Without it the server runs in dry-run.
@@ -21,6 +25,7 @@ use std::time::Duration;
 
 use anyhow::{Context, Result};
 
+use handshake_server::guard::{Guard, GuardConfig};
 use handshake_server::identity::ServerIdentity;
 use handshake_server::registry::{Registry, DEFAULT_MAX_PEERS};
 use handshake_server::server::{self, ServerContext};
@@ -36,6 +41,7 @@ fn main() -> Result<()> {
     let mut peers_file: Option<PathBuf> = None;
     let mut max_peers = DEFAULT_MAX_PEERS;
     let mut idle_timeout_secs: u64 = 0;
+    let mut guard_cfg = GuardConfig::default();
 
     let mut args = std::env::args().skip(1);
     while let Some(a) = args.next() {
@@ -50,14 +56,29 @@ fn main() -> Result<()> {
             "--peers-file" => peers_file = Some(PathBuf::from(val()?)),
             "--max-peers" => max_peers = val()?.parse().context("--max-peers")?,
             "--idle-timeout-secs" => idle_timeout_secs = val()?.parse().context("--idle-timeout-secs")?,
+            "--replay-window-secs" => {
+                guard_cfg.replay_window = Duration::from_secs(val()?.parse().context("--replay-window-secs")?)
+            }
+            "--rate-burst" => guard_cfg.rate_burst = val()?.parse().context("--rate-burst")?,
+            "--rate-per-min" => guard_cfg.rate_per_minute = val()?.parse().context("--rate-per-min")?,
+            "--max-conns" => guard_cfg.max_concurrent = val()?.parse().context("--max-conns")?,
             "-h" | "--help" => {
                 println!("handshake-server [--bind ADDR] [--identity PATH] [--wg-interface NAME]");
                 println!("                 [--wg-port N] [--tunnel-cidr CIDR] [--wg-pubkey BASE64]");
                 println!("                 [--peers-file PATH] [--max-peers N] [--idle-timeout-secs N]");
+                println!("                 [--replay-window-secs N] [--rate-burst N] [--rate-per-min N]");
+                println!("                 [--max-conns N]");
                 return Ok(());
             }
             other => anyhow::bail!("unknown argument: {other}"),
         }
+    }
+
+    if guard_cfg.rate_burst == 0 {
+        anyhow::bail!("--rate-burst must be at least 1 (0 would refuse every handshake)");
+    }
+    if guard_cfg.max_concurrent == 0 {
+        anyhow::bail!("--max-conns must be at least 1");
     }
 
     let identity = ServerIdentity::load_or_create(&identity_path)
@@ -110,6 +131,13 @@ fn main() -> Result<()> {
     if idle_timeout_secs > 0 {
         println!("idle eviction  : after {idle_timeout_secs}s");
     }
+    println!(
+        "guard          : replay window {}s, {} burst + {}/min per IP, max {} open conns",
+        guard_cfg.replay_window.as_secs(),
+        guard_cfg.rate_burst,
+        guard_cfg.rate_per_minute,
+        guard_cfg.max_concurrent
+    );
 
     // reconcile the registry against the live interface
     server::reconcile_wg_peers(&ctx);
@@ -121,6 +149,8 @@ fn main() -> Result<()> {
     let listener = TcpListener::bind(&bind).with_context(|| format!("bind {bind}"))?;
     println!("listening on   : {}\n", listener.local_addr()?);
 
-    server::serve(listener, ctx);
+    let guard = Arc::new(Guard::new(guard_cfg));
+    server::spawn_guard_prune(Arc::clone(&guard));
+    server::serve(listener, ctx, guard);
     Ok(())
 }

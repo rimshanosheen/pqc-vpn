@@ -2026,6 +2026,141 @@ Build note for Windows: building `desktop` writes a ~1.2 GB static library
 disk, run `cargo clean` first; `CARGO_INCREMENTAL=0` and `--jobs 2` help on
 low-RAM machines.
 
+## Week 7 (Member 2 track, 2026-11-28) — replay protection and handshake rate limiting
+
+Assigned task (`TEAM_TIMELINE_PROPOSAL.md`): replay protection and basic
+handshake rate-limiting, because a PQC handshake responder on the internet is
+a target. `PROTOCOL.md` §7 had reserved this since Week 1 as a 2-minute
+`client_nonce` cache plus a per-source-IP limit returning
+`Error(RATE_LIMITED)`, with no wire change needed.
+
+### Why it matters even though the crypto already resists replay
+
+Replaying a recorded `ClientHello` could never produce a working session,
+because the replayer doesn't have the client's ephemeral secrets and can't
+compute `ClientFinish`. But the server did not know that until message 3. By
+then it had already run an ML-KEM encapsulation, an X25519 exchange and,
+most expensively, an **ML-DSA-65 signature** for every replayed or flooded
+hello. On top of that, the server is blocking thread-per-connection with a
+10 s socket timeout, so a client that opens sockets and goes silent holds one
+thread each with no upper bound. This week's job is to make both cheap to
+refuse.
+
+### `guard.rs` (new)
+
+Three independent checks, all run before any post-quantum work:
+
+| check | where | default | refusal |
+|---|---|---|---|
+| `NonceCache`: every `client_nonce` remembered for the window | message 1: `ClientHello` *and* the hello inside `RekeyRequest` | 120 s | `Error(0x06 AUTH_FAILED)` |
+| `RateLimiter`: token bucket per source IP | accept loop | burst 20, refill 30/min | `Error(0x07 RATE_LIMITED)` |
+| concurrent-connection cap (RAII `Permit`, released on drop/panic) | accept loop | 64 | `Error(0x07 RATE_LIMITED)` |
+
+Design choices worth recording:
+
+- **The nonce is recorded on receipt, not on completion.** A hello that was
+  never finished still can't be replayed.
+- **A replay maps to `0x06`, not a new code.** The v1 code table is frozen
+  and has no replay code. A nonce reuse means the handshake can't be shown
+  to be fresh, so it falls under `AUTH_FAILED`. A real client with 32 random
+  bytes per hello never hits this.
+- **The concurrency slot is taken before the rate-limit token**, so a
+  connection refused for "server busy" doesn't also burn that IP's budget.
+  Unit-tested.
+- **A refused check doesn't reset the bucket's refill clock**, so a client
+  that keeps retrying still recovers at the configured rate. Unit-tested.
+- **Both tables are bounded** (100k nonces, 10k IPs). When a table is full
+  of unexpired entries the server fails closed (`0x07`) instead of growing.
+  A background thread prunes expired entries every minute.
+- **The defaults are generous on purpose.** Several team laptops on campus
+  Wi-Fi share one public IP, and the multi-laptop demo must not
+  rate-limit itself. Every limit is a CLI flag: `--replay-window-secs`,
+  `--rate-burst`, `--rate-per-min`, `--max-conns`.
+- **Refusals happen on the accept thread**, with a 200 ms write timeout on
+  the error frame, so a peer that never reads can't stall `accept` for
+  everyone else.
+
+### Server wiring, without touching `core/`
+
+`server::serve` now takes an `Arc<Guard>` and admits each connection before
+spawning its handler, which calls the new `handle_connection_guarded`.
+`ServerContext` and `handle_connection(stream, ctx)` are **unchanged**: the
+latter is now the guard-less path. `vpn_core`'s Week 6 loopback tests build
+a `ServerContext` and call `handle_connection` directly, so adding a field
+or changing that signature would have broken Member 1's code for no benefit.
+`main.rs` builds the guard from the CLI flags and prints its configuration on
+startup.
+
+### Tests
+
+- **12 unit tests in `guard.rs`:**
+  - replay inside the window and acceptance again after it;
+  - pruning removes only expired entries;
+  - a full nonce cache fails closed, then recovers once entries expire;
+  - the bucket allows its burst, then refills at the configured rate;
+  - a refused attempt doesn't reset the refill clock;
+  - zero refill makes the burst a hard total;
+  - IP pruning, and a full IP table failing closed only for *new* IPs;
+  - concurrency slots are released on drop, and a refused admit doesn't
+    leak a slot;
+  - a "busy" refusal doesn't spend the IP's token;
+  - the protocol code mapping.
+- **6 integration tests (`guarded_*` in `tests/handshake.rs`)**, all through
+  the real `server::serve` accept loop over loopback TCP:
+  - a byte-for-byte replayed `ClientHello` gets `0x06` and never reaches
+    `wg set`;
+  - a replay of an *abandoned* hello is also refused;
+  - a `RekeyRequest` wrapping a spent nonce is refused, while a genuine
+    fresh-nonce rekey on the same session still succeeds, with no
+    `remove_peer`;
+  - the 4th connection from one IP with burst 3 gets `0x07`;
+  - a silent connection holding the only slot causes `0x07` for the next,
+    and service recovers once it disconnects;
+  - 10 normal clients see no difference.
+- **Mutation check:** with the nonce check disabled, exactly the three
+  replay tests fail. The rate and cap tests are independent of it.
+- **Smoke test with the real binaries** (Windows, dry-run, `--rate-burst 2
+  --rate-per-min 0`): two `test-client` runs completed handshakes; the third
+  printed `server returned Error 0x07: rate limited: too many handshakes
+  from this address`, and the server logged `REFUSED 127.0.0.1: …`.
+
+`cargo test --workspace`: `handshake-server` 34 unit + 14 integration (12 + 6
+new), `vpn_core` 70/70 (unchanged), `desktop` 6/6.
+
+### Docs
+
+`PROTOCOL.md` §7 is rewritten from "fields defined now, enforcement in Week
+7" to the enforced behaviour, with a table of checks, defaults and refusal
+codes, plus a change-log row (no wire-format change, no new codes). It also
+adds a **note for client implementers**: a connection refused on accept
+receives the `Error` frame *before* the client has sent anything. A client
+should read what the server sends rather than assume its own `ClientHello`
+write goes first, and should treat `0x07` as transient and retry with
+backoff. The crate README documents the new module, flags and tests.
+
+### Not verified yet
+
+- **Against the droplet:** it's currently unavailable (the DigitalOcean
+  subscription is paused). Nothing here depends on WireGuard, and the guard
+  runs identically in dry-run, so the loopback tests and local smoke test
+  cover the logic. A redeploy only needs to confirm the `guard :` startup
+  line and one `REFUSED` under a forced low `--rate-burst`.
+- **Persistence:** the replay cache and buckets are in memory and are lost
+  on a restart. That is acceptable here. Replaying a hello after a restart
+  still can't complete a handshake. It only costs the server one signature,
+  and the rate limiter covers that cost.
+- **Per-IP limits can't distinguish clients behind one NAT.** This is the
+  reason for the generous defaults above. Per-peer (per-`client_wg_pubkey`)
+  limits aren't possible on accept, because the pubkey arrives only in
+  message 1, and they would be trivially evaded with fresh keys anyway.
+
+### Status against the Week 7 mandate
+
+Done: replay protection (the `client_nonce` cache, covering rekeys too) and
+handshake rate limiting (per-IP token bucket plus a server-wide connection
+cap), all refused before any PQC work, with no protocol change, and
+`core/` and `contracts/` untouched.
+
 ## How to reproduce
 
 ```bash

@@ -21,7 +21,8 @@ persistence, peer/tunnel management, and a blocking TCP server.
 | `client_handshake` | client side, for `test-client` and `emit-vectors` |
 | `tunnel` | `PskInstaller` — `WgCli` runs `wg set` / `wg show … peers` / `… remove`; `DryRun` logs |
 | `registry` | multi-peer registry: session ↔ wg peer ↔ tunnel address, persisted to `peers.json` (no PSKs); capacity limit; startup reconciliation against `wg0` |
-| `server` | TCP accept loop + per-connection handler; updates the registry and installs the PSK; optional idle sweep |
+| `guard` | Week 7: `client_nonce` replay cache, per-IP token-bucket rate limit, concurrent-connection cap (`PROTOCOL.md` §7) |
+| `server` | TCP accept loop (admission via `guard`) + per-connection handler; updates the registry and installs the PSK; optional idle sweep |
 
 ## Binaries
 
@@ -34,6 +35,9 @@ cargo run -p handshake-server --bin handshake-server -- \
 cargo run -p handshake-server --bin handshake-server -- \
     --wg-interface wg0 --wg-port 51820 --tunnel-cidr 10.8.0.0/24 \
     --peers-file /var/lib/pqc-vpn/peers.json --max-peers 64 --idle-timeout-secs 0
+
+# Week 7 guard knobs (defaults shown) — PROTOCOL.md §7
+#   --replay-window-secs 120 --rate-burst 20 --rate-per-min 30 --max-conns 64
 
 # throwaway test client — full handshake, then prints a wg-quick client config
 cargo run -p handshake-server --bin test-client -- \
@@ -66,14 +70,20 @@ since Week 6, `over_tcp_rekey_*`: a `RekeyRequest` over the same real
 registry entry don't, and — the no-drop proof — a recording `PskInstaller`
 that never sees `remove_peer` called across a rekey.
 
+Since Week 7, `guarded_*` tests run the real `server::serve` accept loop with a
+`Guard`: a byte-for-byte replayed `ClientHello` (completed or abandoned) and a
+`RekeyRequest` reusing a spent nonce are refused with `0x06` and never reach
+`wg set`; a burst-exhausted IP and a connection over the concurrency cap get
+`0x07`; the cap recovers once the holder disconnects; ten normal clients see
+no difference. A mutation check (replay check disabled) fails exactly the
+three replay tests.
+
 ## Not yet done (later weeks)
 
 - **Peers live in `wg0` + `peers.json`, not written into `wg0.conf`.** After a
   `wg0` restart the peers are gone from the interface but kept in the registry;
   their clients re-handshake. (Writing `wg0.conf` for true persistence is
   possible later; the registry + reconciliation covers the container case.)
-- **Replay cache / rate limiting** — fields are in the protocol; enforcement is
-  Week 7.
 - **Idle eviction** is implemented (`--idle-timeout-secs`) but off by default;
   real use is Week 9/10.
 - Blocking thread-per-connection is fine at this stage; revisit for the Week 10
