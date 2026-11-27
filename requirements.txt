@@ -2,9 +2,10 @@
 cryptography==42.0.8
 keyring==25.7.0
 
-# liboqs-python is NOT on PyPI — build liboqs (C library) from source,
-# then install the Python wrapper from https://github.com/open-quantum-safe/liboqs-python
-# liboqs-python==0.14.0
+# liboqs-python is NOT on PyPI. Build liboqs (the C library) from source via
+# cmake+ninja, then: pip install git+https://github.com/open-quantum-safe/liboqs-python.git@0.12.0
+# (0.14.0 was a placeholder here; no such tag exists -- 0.12.0 is the real
+# liboqs-python release confirmed working against liboqs 0.12.0-0.15.0.)
 
 # RL agent (Phase 2)
 gymnasium==0.29.1
@@ -19,9 +20,15 @@ scikit-learn==1.5.0
 # Policy export for the Rust client (Member 1 consumes the .onnx via `ort`)
 onnx==1.22.0
 onnxruntime==1.28.0
+# torch's current ONNX exporter path (torch.onnx.export -> _internal.exporter)
+# imports this transitively; not pulled in automatically by torch itself.
+onnxscript==0.7.2
 
 # System metrics / anomaly detection inputs
 psutil==6.0.0
+
+# Real packet-capture parsing for Layer 3 grounding (Week 8, capture_real_traffic.py)
+scapy==2.6.1
 
 # API layer (planned — FastAPI daemon, section 3.4 of proposal)
 fastapi==0.111.0

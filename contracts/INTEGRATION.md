@@ -92,17 +92,24 @@ noise.
 So put the decision gate between the policy and the crypto layer.
 `client/rl_agent/decision_gate.py` is the reference implementation — about 40
 lines of counters and comparisons, designed to be transliterated rather than
-called. Port it and verify against `decision_gate_vectors.json`, which replays
-tick-by-tick exactly like the policy vectors do:
+called.
+
+**The Rust port is done (Week 7): `vpn_core::rl::gate`** (`core/src/rl/gate.rs`).
+Construct a `DecisionGate::new(level)` per session with the algorithm
+negotiated at connect time, run the ONNX model, and feed
+`gate.update(&softmax(&logits))` every tick. `PolicyAction::from_index` maps
+an output index to `MlKemLevel` / `RekeyNow`. Its tests replay every case in
+`decision_gate_vectors.json` tick-by-tick, like this:
 
 ```
 for case in cases:
     gate = DecisionGate(in_force = case.initial_in_force)
     for tick in case.ticks:
-        d = gate.update(softmax(tick.probs))
+        d = gate.update(tick.probs)          # already softmax'd in the file
         assert d.in_force == tick.expect.in_force
         assert d.change_algorithm == tick.expect.change_algorithm
         assert d.rekey == tick.expect.rekey
+        assert d.reason == tick.expect.reason
 ```
 
 The gate is stateful, so a case only means anything replayed in order from a
@@ -124,16 +131,19 @@ The gate returns three things per tick:
 - `change_algorithm` — renegotiate to `in_force` with a fresh handshake.
 - `rekey` — re-run the handshake at `in_force`. This does not raise or lower
   the algorithm on its own, but `in_force` may already have been raised by
-  this same tick's escalation rule — see the open item just below.
+  this same tick's escalation rule — see the resolved rule just below.
 
 `change_algorithm` and `rekey` are never both true in the same tick.
 
-### One open item for the Week 4 checkpoint
+### Rekey escalation — resolved at the Week 4 checkpoint
 
-`algo_registry.json` says a rekey means "re-run the handshake using the
-algorithm currently in force". The reference gate defaults to a slightly
-stronger rule: rekey at the **stronger** of {in force, the policy's
-top-ranked KEM}, never weaker.
+`algo_registry.json` says a rekey means "re-run the handshake at the algorithm
+in force, or at the policy's top-ranked KEM if that is stronger; never
+weaker". That is the `REKEY_ESCALATES` rule, **approved as shipped**
+(`contracts/DECISIONS.md` Decision 1): rekey at the **stronger** of {in force,
+the policy's top-ranked KEM}, never weaker. The server enforces the matching
+check — a `RekeyRequest` may carry an equal or stronger algorithm, a weaker
+one is `Error(ALGO_MISMATCH)` (`server/PROTOCOL.md` §4.6, §6).
 
 Why: Week 3 measured that on high-security-need states the policy asks for
 rekey-now 75% of the time, including on states where the oracle wants
@@ -149,10 +159,10 @@ session in the region where it applies. The large number is a statement about
 decision quality on those states; the small one is what a session average
 looks like in this simulator.
 
-**This needs Member 2's sign-off**, since it means a rekey can arrive at a
-different algorithm than the one in force. Set `rekey_escalates = false` for
-exactly the Week 2 semantics. Flagged for the Week 4 checkpoint rather than
-changed unilaterally.
+Member 2 signed off on this, since it means a rekey can arrive at a different
+algorithm than the one in force. `rekey_escalates = false` still reproduces the
+original Week 2 semantics exactly, but it is no longer the contract — a client
+built to the frozen interface uses the default (`true`).
 
 ## What is frozen and what is not
 

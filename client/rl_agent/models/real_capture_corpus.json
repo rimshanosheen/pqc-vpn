@@ -1,0 +1,3613 @@
+{
+  "schema_version": 1,
+  "generated_by": "python -m client.rl_agent.capture_real_traffic",
+  "notes": [
+    "idle/browsing are real BENIGN ticks; beaconing/bulk_upload/port_scan are real ticks shaped like their matching ATTACK_MIXES entry and are for measurement only, never trained on -- see this module's docstring for why.",
+    "bulk_upload/port_scan were captured over loopback (lo0): not a real NIC path (MTU, latency/jitter).",
+    "beaconing used a 7s interval, far faster than a realistic C2 cadence, so capture finished in one sitting."
+  ],
+  "scenarios": {
+    "idle": {
+      "category": "benign",
+      "attack_mix": null,
+      "direction_mode": "nic",
+      "n_ticks": 59
+    },
+    "browsing": {
+      "category": "benign",
+      "attack_mix": null,
+      "direction_mode": "nic",
+      "n_ticks": 62
+    },
+    "beaconing": {
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "direction_mode": "nic",
+      "n_ticks": 91
+    },
+    "bulk_upload": {
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "direction_mode": "nc_port",
+      "n_ticks": 25
+    },
+    "port_scan": {
+      "category": "attack_shaped",
+      "attack_mix": "port_scan",
+      "direction_mode": "tcp_flags",
+      "n_ticks": 1
+    }
+  },
+  "ticks": [
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 0,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 334.62307692307695,
+        "in_size_mean": 500.4148148148148,
+        "pkt_size_std": 512.997473875074,
+        "log_pkt_rate": 1.7323937598229686,
+        "iat_cv": 2.5660666109247092,
+        "upload_share": 0.39169975778203986
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 1,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 60.785714285714285,
+        "in_size_mean": 98.36363636363636,
+        "pkt_size_std": 64.69001940880148,
+        "log_pkt_rate": 0.9138138523837167,
+        "iat_cv": 1.8504752354174314,
+        "upload_share": 0.2822553897180763
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 2,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 62.8,
+        "in_size_mean": 68.66666666666667,
+        "pkt_size_std": 10.452272480183437,
+        "log_pkt_rate": 0.7634279935629372,
+        "iat_cv": 1.811861198983801,
+        "upload_share": 0.6038461538461538
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 3,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 61.18181818181818,
+        "in_size_mean": 61.875,
+        "pkt_size_std": 12.362605680211173,
+        "log_pkt_rate": 0.8061799739838872,
+        "iat_cv": 1.307065523442447,
+        "upload_share": 0.4046903187011425
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 4,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 63.1764705882353,
+        "in_size_mean": 66.75,
+        "pkt_size_std": 11.196221322429565,
+        "log_pkt_rate": 0.8808135922807914,
+        "iat_cv": 1.42197821549669,
+        "upload_share": 0.5014005602240896
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 5,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.6627578316815741,
+        "iat_cv": 0.8022899529711877,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 6,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.6627578316815741,
+        "iat_cv": 0.8456303728361314,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 7,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 60.0,
+        "in_size_mean": 68.14285714285714,
+        "pkt_size_std": 10.695350978082892,
+        "log_pkt_rate": 0.7923916894982539,
+        "iat_cv": 1.1775924246417075,
+        "upload_share": 0.43010752688172044
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 8,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.3424226808222063,
+        "iat_cv": 1.1826257484160343,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 9,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 63.6,
+        "in_size_mean": 73.75,
+        "pkt_size_std": 8.899925712383807,
+        "log_pkt_rate": 0.7323937598229685,
+        "iat_cv": 1.5853498139148487,
+        "upload_share": 0.4181459566074951
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 10,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 58.0,
+        "in_size_mean": 68.25,
+        "pkt_size_std": 7.606535019310698,
+        "log_pkt_rate": 0.414973347970818,
+        "iat_cv": 1.3612789493336361,
+        "upload_share": 0.4594059405940594
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 11,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 67.5,
+        "in_size_mean": 70.8,
+        "pkt_size_std": 12.589090797217715,
+        "log_pkt_rate": 0.5563025007672873,
+        "iat_cv": 1.2243200312667737,
+        "upload_share": 0.6040268456375839
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 12,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 110.0,
+        "in_size_mean": 134.44444444444446,
+        "pkt_size_std": 114.4302089802895,
+        "log_pkt_rate": 0.7323937598229685,
+        "iat_cv": 1.1223294325631954,
+        "upload_share": 0.5416666666666666
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 13,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 123.52380952380952,
+        "in_size_mean": 182.26666666666668,
+        "pkt_size_std": 130.1599443419945,
+        "log_pkt_rate": 0.9138138523837167,
+        "iat_cv": 2.227734948409921,
+        "upload_share": 0.48686186186186187
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 14,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 62.666666666666664,
+        "in_size_mean": 69.28571428571429,
+        "pkt_size_std": 8.916058195749958,
+        "log_pkt_rate": 0.6232492903979004,
+        "iat_cv": 1.2978294115037794,
+        "upload_share": 0.5376549094375596
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 15,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 60.75,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 7.576825458176309,
+        "log_pkt_rate": 0.5563025007672873,
+        "iat_cv": 1.0394839997840881,
+        "upload_share": 0.5955882352941176
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 16,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 124.22222222222223,
+        "in_size_mean": 141.125,
+        "pkt_size_std": 127.64299261617866,
+        "log_pkt_rate": 0.6434526764861874,
+        "iat_cv": 1.499959038518891,
+        "upload_share": 0.4975522919448153
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 17,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 129.61111111111111,
+        "in_size_mean": 168.71428571428572,
+        "pkt_size_std": 135.8984534438766,
+        "log_pkt_rate": 0.8692317197309762,
+        "iat_cv": 2.169801076443854,
+        "upload_share": 0.4969116080937167
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 18,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 62.5,
+        "in_size_mean": 69.0,
+        "pkt_size_std": 10.298840502817749,
+        "log_pkt_rate": 0.505149978319906,
+        "iat_cv": 1.3318263493409017,
+        "upload_share": 0.5208333333333334
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 19,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 64.5,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 17.356257356397077,
+        "log_pkt_rate": 0.505149978319906,
+        "iat_cv": 1.0488490965803898,
+        "upload_share": 0.5397489539748954
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 20,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 77.71428571428571,
+        "pkt_size_std": 18.46543317180028,
+        "log_pkt_rate": 0.5314789170422551,
+        "iat_cv": 1.115524252833275,
+        "upload_share": 0.3316953316953317
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 21,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 570.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 535.1336281715063,
+        "log_pkt_rate": 0.6627578316815741,
+        "iat_cv": 1.6077726428097194,
+        "upload_share": 0.8962264150943396
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 22,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.47712125471966244,
+        "iat_cv": 1.0469979648248582,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 23,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 61.42857142857143,
+        "in_size_mean": 70.71428571428571,
+        "pkt_size_std": 11.85907901576007,
+        "log_pkt_rate": 0.5797835966168101,
+        "iat_cv": 1.2820702080172863,
+        "upload_share": 0.4648648648648649
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 24,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 55.333333333333336,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 5.749595745760689,
+        "log_pkt_rate": 0.505149978319906,
+        "iat_cv": 1.1128528344266961,
+        "upload_share": 0.5015105740181269
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 25,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.414973347970818,
+        "iat_cv": 1.087363034621094,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 26,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 117.0,
+        "in_size_mean": 92.375,
+        "pkt_size_std": 102.10111534700313,
+        "log_pkt_rate": 0.5797835966168101,
+        "iat_cv": 1.183980978607584,
+        "upload_share": 0.4871616932685635
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 27,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 57.0,
+        "in_size_mean": 199.8,
+        "pkt_size_std": 161.8234840806488,
+        "log_pkt_rate": 0.47712125471966244,
+        "iat_cv": 1.235391694523956,
+        "upload_share": 0.2219626168224299
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 28,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 60.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.236095644623235,
+        "log_pkt_rate": 0.4471580313422192,
+        "iat_cv": 0.9476399690017545,
+        "upload_share": 0.5319148936170213
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 29,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 100.75,
+        "pkt_size_std": 48.55650703046915,
+        "log_pkt_rate": 0.414973347970818,
+        "iat_cv": 1.0913788021440174,
+        "upload_share": 0.34894991922455576
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 30,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 88.5,
+        "pkt_size_std": 34.0491841132135,
+        "log_pkt_rate": 0.38021124171160603,
+        "iat_cv": 1.2897694517778722,
+        "upload_share": 0.313953488372093
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 31,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.414973347970818,
+        "iat_cv": 1.1016865064983046,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 32,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 88.5,
+        "pkt_size_std": 34.04918411321349,
+        "log_pkt_rate": 0.38021124171160603,
+        "iat_cv": 1.231935619207394,
+        "upload_share": 0.313953488372093
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 33,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.3424226808222063,
+        "iat_cv": 1.1652243293676918,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 34,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 93.8,
+        "pkt_size_std": 45.9188764004145,
+        "log_pkt_rate": 0.4471580313422192,
+        "iat_cv": 1.1942088693481772,
+        "upload_share": 0.31532846715328466
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 35,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 63.0,
+        "in_size_mean": 72.0,
+        "pkt_size_std": 13.991068579633222,
+        "log_pkt_rate": 0.414973347970818,
+        "iat_cv": 1.3057178320800047,
+        "upload_share": 0.4666666666666667
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 36,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.3424226808222063,
+        "iat_cv": 1.1342471029400487,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 37,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.414973347970818,
+        "iat_cv": 1.081109333569752,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 38,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 172.1090909090909,
+        "in_size_mean": 218.19230769230768,
+        "pkt_size_std": 317.14430731199803,
+        "log_pkt_rate": 1.3502480183341627,
+        "iat_cv": 5.034779109242167,
+        "upload_share": 0.454833749759754
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 39,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 265.64285714285717,
+        "in_size_mean": 419.79411764705884,
+        "pkt_size_std": 465.37096348666796,
+        "log_pkt_rate": 1.209515014542631,
+        "iat_cv": 2.4201389003656706,
+        "upload_share": 0.4387337790011797
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 40,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 115.6470588235294,
+        "in_size_mean": 309.06666666666666,
+        "pkt_size_std": 295.88346919648956,
+        "log_pkt_rate": 0.8692317197309762,
+        "iat_cv": 0.9795493568224423,
+        "upload_share": 0.2977885489245683
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 41,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 104.81818181818181,
+        "in_size_mean": 159.35294117647058,
+        "pkt_size_std": 127.77418340998351,
+        "log_pkt_rate": 0.9444826721501687,
+        "iat_cv": 1.466663740928453,
+        "upload_share": 0.4598205383848455
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 42,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 59.714285714285715,
+        "in_size_mean": 68.5,
+        "pkt_size_std": 8.945594929296389,
+        "log_pkt_rate": 0.5563025007672873,
+        "iat_cv": 1.1933992231484782,
+        "upload_share": 0.5042219541616405
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 43,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.47712125471966244,
+        "iat_cv": 1.0559547403747964,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 44,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 58.833333333333336,
+        "in_size_mean": 67.16666666666667,
+        "pkt_size_std": 8.897565210026093,
+        "log_pkt_rate": 0.5314789170422551,
+        "iat_cv": 1.160214057492255,
+        "upload_share": 0.4669312169312169
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 45,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 58.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 7.959899496852959,
+        "log_pkt_rate": 0.47712125471966244,
+        "iat_cv": 1.0472538753621274,
+        "upload_share": 0.5686274509803921
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 46,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 144.05405405405406,
+        "in_size_mean": 983.725,
+        "pkt_size_std": 663.3751197493358,
+        "log_pkt_rate": 1.2148438480476977,
+        "iat_cv": 3.735401086837194,
+        "upload_share": 0.11929541842923969
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 47,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 60.0,
+        "in_size_mean": 70.0,
+        "pkt_size_std": 12.449899597988733,
+        "log_pkt_rate": 0.5314789170422551,
+        "iat_cv": 1.1943189469357143,
+        "upload_share": 0.46153846153846156
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 48,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 63.625,
+        "in_size_mean": 67.16666666666667,
+        "pkt_size_std": 9.767710236555246,
+        "log_pkt_rate": 0.5797835966168101,
+        "iat_cv": 1.1035088235664345,
+        "upload_share": 0.5581140350877193
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 49,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 246.69230769230768,
+        "in_size_mean": 500.0416666666667,
+        "pkt_size_std": 513.7637686719452,
+        "log_pkt_rate": 1.0413926851582251,
+        "iat_cv": 2.1110070852402694,
+        "upload_share": 0.34830301384740703
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 50,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 141.0,
+        "in_size_mean": 169.53333333333333,
+        "pkt_size_std": 137.6321007458265,
+        "log_pkt_rate": 0.8920946026904804,
+        "iat_cv": 2.0026871063620835,
+        "upload_share": 0.5130218307162007
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 51,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 63.0,
+        "in_size_mean": 68.5,
+        "pkt_size_std": 10.054518055746549,
+        "log_pkt_rate": 0.6020599913279624,
+        "iat_cv": 1.06815649408617,
+        "upload_share": 0.5797546012269938
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 52,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 337.375,
+        "in_size_mean": 244.6153846153846,
+        "pkt_size_std": 483.1783692428312,
+        "log_pkt_rate": 0.8325089127062363,
+        "iat_cv": 2.153753440970262,
+        "upload_share": 0.6292842154348333
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 53,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 56.5,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.278653327211639,
+        "log_pkt_rate": 0.505149978319906,
+        "iat_cv": 1.0414762738985397,
+        "upload_share": 0.5067264573991032
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 54,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 59.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.462197768561405,
+        "log_pkt_rate": 0.47712125471966244,
+        "iat_cv": 1.069338243781878,
+        "upload_share": 0.5728155339805825
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 55,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 63.0,
+        "in_size_mean": 63.6,
+        "pkt_size_std": 10.99494833498043,
+        "log_pkt_rate": 0.6627578316815741,
+        "iat_cv": 1.9511905879432865,
+        "upload_share": 0.4421052631578947
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 56,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.3424226808222063,
+        "iat_cv": 1.1792208555010357,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 57,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.3424226808222063,
+        "iat_cv": 1.1713436261410006,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "idle",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 58,
+      "n_ticks_in_scenario": 59,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.414973347970818,
+        "iat_cv": 1.1117533800879966,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 0,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 79.43382352941177,
+        "in_size_mean": 1100.313432835821,
+        "pkt_size_std": 673.6898634886475,
+        "log_pkt_rate": 1.7403626894942439,
+        "iat_cv": 4.83460192023154,
+        "upload_share": 0.06826755979651805
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 1,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 103.54193548387097,
+        "in_size_mean": 1044.0844155844156,
+        "pkt_size_std": 662.4622155346133,
+        "log_pkt_rate": 1.797959643737196,
+        "iat_cv": 4.116939756012319,
+        "upload_share": 0.09075538063085989
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 2,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 112.75,
+        "in_size_mean": 434.8181818181818,
+        "pkt_size_std": 413.7618813138296,
+        "log_pkt_rate": 1.3944516808262162,
+        "iat_cv": 2.272805905747499,
+        "upload_share": 0.23179467411904534
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 3,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 79.21481481481482,
+        "in_size_mean": 1165.7622950819673,
+        "pkt_size_std": 678.1590782021569,
+        "log_pkt_rate": 1.7193312869837267,
+        "iat_cv": 4.118076506619553,
+        "upload_share": 0.06993336254307893
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 4,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 182.375,
+        "in_size_mean": 448.53333333333336,
+        "pkt_size_std": 482.37484399009054,
+        "log_pkt_rate": 1.2922560713564761,
+        "iat_cv": 3.11314043504819,
+        "upload_share": 0.3025088119427742
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 5,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 76.57377049180327,
+        "in_size_mean": 1246.3893805309735,
+        "pkt_size_std": 691.8715089902655,
+        "log_pkt_rate": 1.6812412373755872,
+        "iat_cv": 4.335830214528292,
+        "upload_share": 0.06220369679859372
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 6,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 78.62857142857143,
+        "in_size_mean": 1165.7557251908397,
+        "pkt_size_std": 678.7953260955044,
+        "log_pkt_rate": 1.741939077729199,
+        "iat_cv": 5.391518170295475,
+        "upload_share": 0.06723592431072184
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 7,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 95.64406779661017,
+        "in_size_mean": 450.3,
+        "pkt_size_std": 428.71585626576234,
+        "log_pkt_rate": 1.3579348470004537,
+        "iat_cv": 3.014053942000851,
+        "upload_share": 0.20040485829959515
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 8,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 75.89256198347107,
+        "in_size_mean": 1206.0,
+        "pkt_size_std": 690.8076897838713,
+        "log_pkt_rate": 1.6866362692622934,
+        "iat_cv": 5.257825100590761,
+        "upload_share": 0.061103902585088334
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 9,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 79.0,
+        "in_size_mean": 1148.6992481203008,
+        "pkt_size_std": 679.7720901346692,
+        "log_pkt_rate": 1.7387805584843692,
+        "iat_cv": 5.976638055844649,
+        "upload_share": 0.065704099167691
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 10,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 98.48148148148148,
+        "in_size_mean": 467.1041666666667,
+        "pkt_size_std": 439.93763768068123,
+        "log_pkt_rate": 1.3304137733491908,
+        "iat_cv": 3.191474730565133,
+        "upload_share": 0.191715635026497
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 11,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 75.75630252100841,
+        "in_size_mean": 1256.767857142857,
+        "pkt_size_std": 694.2146321639864,
+        "log_pkt_rate": 1.6739419986340878,
+        "iat_cv": 5.632149136592963,
+        "upload_share": 0.060191089181628195
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 12,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 202.0,
+        "in_size_mean": 420.7142857142857,
+        "pkt_size_std": 488.4009536196654,
+        "log_pkt_rate": 1.250420002308894,
+        "iat_cv": 3.1005377672862604,
+        "upload_share": 0.32438632713925214
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 13,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 75.51639344262296,
+        "in_size_mean": 1225.9217391304348,
+        "pkt_size_std": 691.3675822804164,
+        "log_pkt_rate": 1.6848453616444126,
+        "iat_cv": 5.005016303351492,
+        "upload_share": 0.061340666071880365
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 14,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 81.9047619047619,
+        "in_size_mean": 1136.4927536231885,
+        "pkt_size_std": 673.5056665269803,
+        "log_pkt_rate": 1.7634279935629373,
+        "iat_cv": 4.197470851654623,
+        "upload_share": 0.0712949146119046
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 15,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 91.32692307692308,
+        "in_size_mean": 433.0238095238095,
+        "pkt_size_std": 414.185229402642,
+        "log_pkt_rate": 1.2966651902615312,
+        "iat_cv": 2.85796304297176,
+        "upload_share": 0.20705441227764212
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 16,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 88.69924812030075,
+        "in_size_mean": 1175.753846153846,
+        "pkt_size_std": 677.5234785085853,
+        "log_pkt_rate": 1.72916478969277,
+        "iat_cv": 4.503501837936437,
+        "upload_share": 0.07165112818488263
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 17,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 95.36619718309859,
+        "in_size_mean": 1124.0,
+        "pkt_size_std": 669.4111064287407,
+        "log_pkt_rate": 1.7403626894942439,
+        "iat_cv": 4.7903874921833935,
+        "upload_share": 0.0860279263597901
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 18,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 93.40845070422536,
+        "in_size_mean": 399.421875,
+        "pkt_size_std": 402.40570741574754,
+        "log_pkt_rate": 1.4471580313422192,
+        "iat_cv": 3.7632887569254625,
+        "upload_share": 0.20599471967696847
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 19,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 76.31896551724138,
+        "in_size_mean": 1257.0089285714287,
+        "pkt_size_std": 695.3009903227066,
+        "log_pkt_rate": 1.6683859166900001,
+        "iat_cv": 7.6136734704143665,
+        "upload_share": 0.059162779507879015
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 20,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 104.28260869565217,
+        "in_size_mean": 613.5641025641025,
+        "pkt_size_std": 490.8467571064698,
+        "log_pkt_rate": 1.255272505103306,
+        "iat_cv": 4.684043549783977,
+        "upload_share": 0.16699157557613312
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 21,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 72.24299065420561,
+        "in_size_mean": 1260.5555555555557,
+        "pkt_size_std": 700.7106668343702,
+        "log_pkt_rate": 1.6434526764861874,
+        "iat_cv": 8.47627804795322,
+        "upload_share": 0.05372906095780913
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 22,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 81.48550724637681,
+        "in_size_mean": 1182.1705426356589,
+        "pkt_size_std": 679.7231301587409,
+        "log_pkt_rate": 1.73559889969818,
+        "iat_cv": 5.426671973714953,
+        "upload_share": 0.06867385263672174
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 23,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 98.53333333333333,
+        "in_size_mean": 557.4358974358975,
+        "pkt_size_std": 475.54445285797516,
+        "log_pkt_rate": 1.250420002308894,
+        "iat_cv": 4.1393992366304895,
+        "upload_share": 0.1694047528081302
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 24,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 76.2457627118644,
+        "in_size_mean": 1256.6160714285713,
+        "pkt_size_std": 694.5334678189417,
+        "log_pkt_rate": 1.6720978579357175,
+        "iat_cv": 7.066493070564671,
+        "upload_share": 0.06008494837649762
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 25,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 100.05405405405405,
+        "in_size_mean": 594.7741935483871,
+        "pkt_size_std": 486.40809044446104,
+        "log_pkt_rate": 1.1643528557844371,
+        "iat_cv": 4.5674547257954385,
+        "upload_share": 0.16720867208672086
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 26,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 126.93908629441624,
+        "in_size_mean": 980.234375,
+        "pkt_size_std": 640.7771548495575,
+        "log_pkt_rate": 1.8965262174895554,
+        "iat_cv": 5.175662861958497,
+        "upload_share": 0.11728701949233626
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 27,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 78.2843137254902,
+        "in_size_mean": 1246.7433628318583,
+        "pkt_size_std": 699.8749648972984,
+        "log_pkt_rate": 1.6434526764861874,
+        "iat_cv": 4.626418905774459,
+        "upload_share": 0.053638482672452595
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 28,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 79.38805970149254,
+        "in_size_mean": 1173.8615384615384,
+        "pkt_size_std": 682.0278327505883,
+        "log_pkt_rate": 1.730782275666389,
+        "iat_cv": 5.212866686592481,
+        "upload_share": 0.06516785101690763
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 29,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 100.08333333333333,
+        "in_size_mean": 484.7142857142857,
+        "pkt_size_std": 455.30833358855995,
+        "log_pkt_rate": 1.1818435879447726,
+        "iat_cv": 2.158689311102897,
+        "upload_share": 0.17517502917152858
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 30,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 78.64754098360656,
+        "in_size_mean": 1232.8521739130435,
+        "pkt_size_std": 689.5408896517049,
+        "log_pkt_rate": 1.6848453616444126,
+        "iat_cv": 7.09110559603344,
+        "upload_share": 0.06338646918538973
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 31,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 98.53333333333333,
+        "in_size_mean": 533.5365853658536,
+        "pkt_size_std": 470.06276708829444,
+        "log_pkt_rate": 1.2600713879850747,
+        "iat_cv": 4.7184165081979215,
+        "upload_share": 0.16853548215439584
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 32,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 93.04838709677419,
+        "in_size_mean": 1163.1259842519685,
+        "pkt_size_std": 688.748430904201,
+        "log_pkt_rate": 1.7092699609758308,
+        "iat_cv": 4.955891808831017,
+        "upload_share": 0.07244984458886691
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 33,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 90.08823529411765,
+        "in_size_mean": 476.8,
+        "pkt_size_std": 462.0914146901571,
+        "log_pkt_rate": 1.1702617153949575,
+        "iat_cv": 2.593816573050052,
+        "upload_share": 0.15508075540478963
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 34,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 75.80508474576271,
+        "in_size_mean": 1241.219298245614,
+        "pkt_size_std": 693.5366376597971,
+        "log_pkt_rate": 1.675778341674085,
+        "iat_cv": 4.810148605552425,
+        "upload_share": 0.05945733960809338
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 35,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 102.04878048780488,
+        "in_size_mean": 457.0810810810811,
+        "pkt_size_std": 438.92218492364447,
+        "log_pkt_rate": 1.2201080880400552,
+        "iat_cv": 2.6062060328088776,
+        "upload_share": 0.19833143723928706
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 36,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 76.46666666666667,
+        "in_size_mean": 1121.6870229007634,
+        "pkt_size_std": 677.4428959464841,
+        "log_pkt_rate": 1.7339992865383869,
+        "iat_cv": 4.822417830606628,
+        "upload_share": 0.06564121477261166
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 37,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 97.88888888888889,
+        "in_size_mean": 491.9714285714286,
+        "pkt_size_std": 465.91704659379565,
+        "log_pkt_rate": 1.1818435879447726,
+        "iat_cv": 3.460563406618519,
+        "upload_share": 0.16988863713059826
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 38,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 109.82068965517242,
+        "in_size_mean": 1092.0633802816901,
+        "pkt_size_std": 675.250817924548,
+        "log_pkt_rate": 1.7664128471123994,
+        "iat_cv": 4.152155771645191,
+        "upload_share": 0.0931244407796628
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 39,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 78.66935483870968,
+        "in_size_mean": 1220.9568965517242,
+        "pkt_size_std": 688.6807189898185,
+        "log_pkt_rate": 1.6901960800285136,
+        "iat_cv": 5.623758082856531,
+        "upload_share": 0.06443792688888009
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 40,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 102.56603773584905,
+        "in_size_mean": 464.83673469387753,
+        "pkt_size_std": 440.3141761533979,
+        "log_pkt_rate": 1.3304137733491908,
+        "iat_cv": 2.560911559887912,
+        "upload_share": 0.19267713465423741
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 41,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 77.38095238095238,
+        "in_size_mean": 1178.25,
+        "pkt_size_std": 685.9064637237276,
+        "log_pkt_rate": 1.7007037171450194,
+        "iat_cv": 4.142256999815207,
+        "upload_share": 0.06450972608177849
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 42,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 94.16279069767442,
+        "in_size_mean": 517.1515151515151,
+        "pkt_size_std": 453.6059728836627,
+        "log_pkt_rate": 1.209515014542631,
+        "iat_cv": 2.2871521545709617,
+        "upload_share": 0.19175941273975847
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 43,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 113.86624203821655,
+        "in_size_mean": 1052.1523178807947,
+        "pkt_size_std": 660.7337194882779,
+        "log_pkt_rate": 1.7965743332104296,
+        "iat_cv": 3.9272464205311826,
+        "upload_share": 0.10114171268217616
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 44,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 86.96428571428571,
+        "in_size_mean": 1082.6567164179105,
+        "pkt_size_std": 663.9410720459724,
+        "log_pkt_rate": 1.7466341989375787,
+        "iat_cv": 3.6085083621700447,
+        "upload_share": 0.07742399094441371
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 45,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 97.28070175438596,
+        "in_size_mean": 485.10869565217394,
+        "pkt_size_std": 438.7026961544216,
+        "log_pkt_rate": 1.334453751150931,
+        "iat_cv": 2.595827762030953,
+        "upload_share": 0.19903086862885858
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 46,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 78.14285714285714,
+        "in_size_mean": 1183.9426229508197,
+        "pkt_size_std": 690.7681293527282,
+        "log_pkt_rate": 1.6919651027673603,
+        "iat_cv": 4.600064643081606,
+        "upload_share": 0.0604852348120203
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 47,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 78.9051094890511,
+        "in_size_mean": 1156.7424242424242,
+        "pkt_size_std": 679.9467340496722,
+        "log_pkt_rate": 1.7387805584843692,
+        "iat_cv": 5.3328295614674275,
+        "upload_share": 0.06611620795107033
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 48,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 95.225,
+        "in_size_mean": 475.1142857142857,
+        "pkt_size_std": 447.81306734941194,
+        "log_pkt_rate": 1.2041199826559248,
+        "iat_cv": 2.637217170655039,
+        "upload_share": 0.18636852921029454
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 49,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 82.36842105263158,
+        "in_size_mean": 1130.746153846154,
+        "pkt_size_std": 677.1007421550821,
+        "log_pkt_rate": 1.72916478969277,
+        "iat_cv": 4.833014974623572,
+        "upload_share": 0.06935651337115073
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 50,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 81.19718309859155,
+        "in_size_mean": 1140.641791044776,
+        "pkt_size_std": 675.5942360867567,
+        "log_pkt_rate": 1.749736315569061,
+        "iat_cv": 5.065594821285227,
+        "upload_share": 0.0701440599600915
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 51,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 95.74137931034483,
+        "in_size_mean": 438.11538461538464,
+        "pkt_size_std": 426.8122707500452,
+        "log_pkt_rate": 1.3617278360175928,
+        "iat_cv": 2.7329080730704036,
+        "upload_share": 0.19597670725251456
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 52,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 78.5068493150685,
+        "in_size_mean": 1108.6762589928057,
+        "pkt_size_std": 673.0837960031294,
+        "log_pkt_rate": 1.7634279935629373,
+        "iat_cv": 4.506048784006861,
+        "upload_share": 0.06922835330498647
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 53,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 79.19047619047619,
+        "in_size_mean": 1133.079365079365,
+        "pkt_size_std": 681.2806201439491,
+        "log_pkt_rate": 1.7109631189952756,
+        "iat_cv": 4.94222050944505,
+        "upload_share": 0.06532413287418329
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 54,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 100.17647058823529,
+        "in_size_mean": 511.9767441860465,
+        "pkt_size_std": 454.3173419215531,
+        "log_pkt_rate": 1.2966651902615312,
+        "iat_cv": 2.8601621549642866,
+        "upload_share": 0.18835717445804454
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 55,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 95.77397260273973,
+        "in_size_mean": 1005.4068965517241,
+        "pkt_size_std": 660.7853699092822,
+        "log_pkt_rate": 1.7723217067229198,
+        "iat_cv": 4.200698792320836,
+        "upload_share": 0.08752120275150688
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 56,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 92.64615384615385,
+        "in_size_mean": 695.9473684210526,
+        "pkt_size_std": 544.2882136950244,
+        "log_pkt_rate": 1.404833716619938,
+        "iat_cv": 3.589339934270706,
+        "upload_share": 0.13179838480225864
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 57,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 76.0677966101695,
+        "in_size_mean": 1159.0892857142858,
+        "pkt_size_std": 682.9516724066939,
+        "log_pkt_rate": 1.6720978579357175,
+        "iat_cv": 4.760630073331006,
+        "upload_share": 0.06467138348919982
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 58,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 75.5241935483871,
+        "in_size_mean": 1173.2644628099174,
+        "pkt_size_std": 687.3252026472518,
+        "log_pkt_rate": 1.6989700043360187,
+        "iat_cv": 5.22174233228031,
+        "upload_share": 0.06188462300931739
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 59,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 98.91428571428571,
+        "in_size_mean": 500.09090909090907,
+        "pkt_size_std": 465.27519180480334,
+        "log_pkt_rate": 1.1643528557844371,
+        "iat_cv": 2.482468345307521,
+        "upload_share": 0.17340345604808416
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 60,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 130.5,
+        "pkt_size_std": 112.68580212253895,
+        "log_pkt_rate": 0.47712125471966244,
+        "iat_cv": 1.2802706878198504,
+        "upload_share": 0.21621621621621623
+      }
+    },
+    {
+      "scenario": "browsing",
+      "category": "benign",
+      "attack_mix": null,
+      "tick_index": 61,
+      "n_ticks_in_scenario": 62,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.3424226808222063,
+        "iat_cv": 1.1701965023017555,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 0,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 93.45,
+        "in_size_mean": 324.3157894736842,
+        "pkt_size_std": 362.21500801534734,
+        "log_pkt_rate": 0.9444826721501687,
+        "iat_cv": 3.047551877457968,
+        "upload_share": 0.2327231976092641
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 1,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 90.875,
+        "in_size_mean": 311.65,
+        "pkt_size_std": 343.5899950678771,
+        "log_pkt_rate": 0.9912260756924949,
+        "iat_cv": 2.7172720432253583,
+        "upload_share": 0.2592108390777276
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 2,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 270.2631578947368,
+        "in_size_mean": 386.52941176470586,
+        "pkt_size_std": 496.39894909907565,
+        "log_pkt_rate": 0.9138138523837167,
+        "iat_cv": 2.26337177566487,
+        "upload_share": 0.43866393302579876
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 3,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 84.77777777777777,
+        "in_size_mean": 310.3,
+        "pkt_size_std": 334.6119040044659,
+        "log_pkt_rate": 1.0170333392987803,
+        "iat_cv": 2.017079350145075,
+        "upload_share": 0.2694526191877575
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 4,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 186.07142857142858,
+        "in_size_mean": 299.38709677419354,
+        "pkt_size_std": 410.7106990189195,
+        "log_pkt_rate": 1.1931245983544616,
+        "iat_cv": 1.849904657157859,
+        "upload_share": 0.4571244735610669
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 5,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 96.16666666666667,
+        "in_size_mean": 130.5,
+        "pkt_size_std": 102.69202668050718,
+        "log_pkt_rate": 0.8692317197309762,
+        "iat_cv": 1.5058406231463157,
+        "upload_share": 0.48650927487352447
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 6,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 109.23076923076923,
+        "in_size_mean": 268.8709677419355,
+        "pkt_size_std": 287.16393135174155,
+        "log_pkt_rate": 1.1760912590556813,
+        "iat_cv": 1.7997004531397276,
+        "upload_share": 0.3382294561333863
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 7,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 84.85185185185185,
+        "in_size_mean": 271.7916666666667,
+        "pkt_size_std": 322.4710782521619,
+        "log_pkt_rate": 1.0492180226701815,
+        "iat_cv": 2.5350986382668634,
+        "upload_share": 0.25992738824597234
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 8,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 56.4,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.99714227381436,
+        "log_pkt_rate": 0.6989700043360189,
+        "iat_cv": 0.8777175292195569,
+        "upload_share": 0.46078431372549017
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 9,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 86.375,
+        "in_size_mean": 253.87878787878788,
+        "pkt_size_std": 306.26507789466797,
+        "log_pkt_rate": 1.0934216851622351,
+        "iat_cv": 2.476799974140631,
+        "upload_share": 0.1983542244761267
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 10,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 100.81481481481481,
+        "in_size_mean": 311.3333333333333,
+        "pkt_size_std": 361.02851287069296,
+        "log_pkt_rate": 1.0718820073061255,
+        "iat_cv": 2.0825328500947378,
+        "upload_share": 0.244608195542775
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 11,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 170.47368421052633,
+        "in_size_mean": 219.2941176470588,
+        "pkt_size_std": 369.0504697577217,
+        "log_pkt_rate": 0.9138138523837167,
+        "iat_cv": 1.8941652956819088,
+        "upload_share": 0.4649059853595522
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 12,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 79.9,
+        "in_size_mean": 247.0,
+        "pkt_size_std": 307.5315086440157,
+        "log_pkt_rate": 1.0934216851622351,
+        "iat_cv": 1.4722312850833283,
+        "upload_share": 0.2643944407677035
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 13,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 467.0243902439024,
+        "in_size_mean": 221.23529411764707,
+        "pkt_size_std": 536.7848234317609,
+        "log_pkt_rate": 1.2041199826559248,
+        "iat_cv": 1.8268256577759565,
+        "upload_share": 0.717960254968129
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 14,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 81.73684210526316,
+        "pkt_size_std": 27.157763487574943,
+        "log_pkt_rate": 0.8920946026904804,
+        "iat_cv": 1.3703154841821994,
+        "upload_share": 0.3427845958527296
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 15,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 81.3103448275862,
+        "in_size_mean": 244.8,
+        "pkt_size_std": 304.16143523511676,
+        "log_pkt_rate": 1.1072099696478683,
+        "iat_cv": 1.3747552812102628,
+        "upload_share": 0.24304267161410018
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 16,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 233.9375,
+        "in_size_mean": 251.53846153846155,
+        "pkt_size_std": 433.32436436951303,
+        "log_pkt_rate": 1.2648178230095364,
+        "iat_cv": 2.4154968173187883,
+        "upload_share": 0.5337230856979894
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 17,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.53333333333333,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 5.9069277532038225,
+        "log_pkt_rate": 0.8325089127062363,
+        "iat_cv": 0.8390510714499254,
+        "upload_share": 0.4695752009184845
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 18,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 89.3225806451613,
+        "in_size_mean": 261.44,
+        "pkt_size_std": 310.3317221012814,
+        "log_pkt_rate": 1.0863598306747482,
+        "iat_cv": 2.093433583784278,
+        "upload_share": 0.29758194519075765
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 19,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 83.88461538461539,
+        "in_size_mean": 269.625,
+        "pkt_size_std": 325.91127381543583,
+        "log_pkt_rate": 1.0413926851582251,
+        "iat_cv": 2.0619874254599444,
+        "upload_share": 0.25208044382801664
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 20,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.7323937598229685,
+        "iat_cv": 0.7596950458174635,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 21,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 82.17857142857143,
+        "in_size_mean": 254.80769230769232,
+        "pkt_size_std": 314.79762044547675,
+        "log_pkt_rate": 1.0718820073061255,
+        "iat_cv": 1.5481638910374824,
+        "upload_share": 0.2577862424378221
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 22,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 84.6,
+        "in_size_mean": 227.97222222222223,
+        "pkt_size_std": 296.64728267726724,
+        "log_pkt_rate": 1.1205739312058498,
+        "iat_cv": 1.6926517191857435,
+        "upload_share": 0.20490215074597945
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 23,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 70.46153846153847,
+        "pkt_size_std": 10.238184208101407,
+        "log_pkt_rate": 0.7481880270062004,
+        "iat_cv": 0.722905705616773,
+        "upload_share": 0.3708791208791209
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 24,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 83.22222222222223,
+        "in_size_mean": 259.0740740740741,
+        "pkt_size_std": 314.1114692098384,
+        "log_pkt_rate": 1.0718820073061255,
+        "iat_cv": 1.589384315819572,
+        "upload_share": 0.24312919281540793
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 25,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 84.11111111111111,
+        "in_size_mean": 237.5625,
+        "pkt_size_std": 301.098193914588,
+        "log_pkt_rate": 1.1072099696478683,
+        "iat_cv": 1.567898684519587,
+        "upload_share": 0.23002127013065937
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 26,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 79.94117647058823,
+        "in_size_mean": 80.76190476190476,
+        "pkt_size_std": 60.644147317594594,
+        "log_pkt_rate": 0.9344984512435677,
+        "iat_cv": 1.144487638543425,
+        "upload_share": 0.4448445171849427
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 27,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 73.0909090909091,
+        "in_size_mean": 264.81481481481484,
+        "pkt_size_std": 326.42558770191243,
+        "log_pkt_rate": 1.0334237554869496,
+        "iat_cv": 1.657753139719877,
+        "upload_share": 0.183603562457182
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 28,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 84.92307692307692,
+        "in_size_mean": 261.84615384615387,
+        "pkt_size_std": 319.3288727849125,
+        "log_pkt_rate": 1.0569048513364727,
+        "iat_cv": 1.7406969723384622,
+        "upload_share": 0.24489795918367346
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 29,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 87.125,
+        "in_size_mean": 270.0344827586207,
+        "pkt_size_std": 314.4989641216744,
+        "log_pkt_rate": 1.0644579892269184,
+        "iat_cv": 1.6483433386021806,
+        "upload_share": 0.21074380165289255
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 30,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 55.333333333333336,
+        "in_size_mean": 78.53846153846153,
+        "pkt_size_std": 31.29983629455777,
+        "log_pkt_rate": 0.7323937598229685,
+        "iat_cv": 1.9143446264853499,
+        "upload_share": 0.32784726793943386
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 31,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 84.93103448275862,
+        "in_size_mean": 282.3333333333333,
+        "pkt_size_std": 316.312168091032,
+        "log_pkt_rate": 1.0644579892269184,
+        "iat_cv": 1.9261752556845833,
+        "upload_share": 0.2665872929970776
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 32,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 102.83333333333333,
+        "in_size_mean": 286.04,
+        "pkt_size_std": 314.60605511870773,
+        "log_pkt_rate": 1.0791812460476249,
+        "iat_cv": 1.8514826270083855,
+        "upload_share": 0.30138726064869087
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 33,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 111.52,
+        "in_size_mean": 149.6153846153846,
+        "pkt_size_std": 116.16307195012718,
+        "log_pkt_rate": 1.0492180226701815,
+        "iat_cv": 1.7316427267570913,
+        "upload_share": 0.4174902665468703
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 34,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 122.15517241379311,
+        "in_size_mean": 220.51666666666668,
+        "pkt_size_std": 294.66508725246723,
+        "log_pkt_rate": 1.390935107103379,
+        "iat_cv": 3.06781663699305,
+        "upload_share": 0.34873990943099037
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 35,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 84.8076923076923,
+        "in_size_mean": 279.17391304347825,
+        "pkt_size_std": 328.59322655543144,
+        "log_pkt_rate": 1.0334237554869496,
+        "iat_cv": 1.9964597382594365,
+        "upload_share": 0.2556225365175052
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 36,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 5.991683987687456,
+        "log_pkt_rate": 0.6812412373755872,
+        "iat_cv": 0.9539098053490314,
+        "upload_share": 0.42408376963350786
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 37,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 86.52,
+        "in_size_mean": 279.5217391304348,
+        "pkt_size_std": 331.40288924509997,
+        "log_pkt_rate": 1.0253058652647702,
+        "iat_cv": 2.149539237868707,
+        "upload_share": 0.25174581005586594
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 38,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 84.8076923076923,
+        "in_size_mean": 278.4782608695652,
+        "pkt_size_std": 328.6944490196427,
+        "log_pkt_rate": 1.0334237554869496,
+        "iat_cv": 1.553554398896145,
+        "upload_share": 0.25609756097560976
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 39,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 161.0612244897959,
+        "in_size_mean": 193.43478260869566,
+        "pkt_size_std": 302.6982242406598,
+        "log_pkt_rate": 1.3010299956639813,
+        "iat_cv": 3.332435364183536,
+        "upload_share": 0.4700416914830256
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 40,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 254.28,
+        "in_size_mean": 306.9795918367347,
+        "pkt_size_std": 449.31913597176475,
+        "log_pkt_rate": 1.3180633349627615,
+        "iat_cv": 2.24171561544348,
+        "upload_share": 0.458063121487246
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 41,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 591.3913043478261,
+        "in_size_mean": 715.7727272727273,
+        "pkt_size_std": 643.7890475751958,
+        "log_pkt_rate": 1.2787536009528289,
+        "iat_cv": 2.0670767083972956,
+        "upload_share": 0.46345701727486455
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 42,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 861.3571428571429,
+        "in_size_mean": 943.3333333333334,
+        "pkt_size_std": 635.5208200580629,
+        "log_pkt_rate": 1.0791812460476249,
+        "iat_cv": 1.5882453343691543,
+        "upload_share": 0.4863676695974833
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 43,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 85.08,
+        "in_size_mean": 288.09090909090907,
+        "pkt_size_std": 334.83868672760974,
+        "log_pkt_rate": 1.0170333392987803,
+        "iat_cv": 2.2043502357335263,
+        "upload_share": 0.25126993502658
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 44,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 84.65384615384616,
+        "in_size_mean": 298.7142857142857,
+        "pkt_size_std": 334.838984161973,
+        "log_pkt_rate": 1.0170333392987803,
+        "iat_cv": 2.0037859214626796,
+        "upload_share": 0.2597356620250177
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 45,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.6989700043360189,
+        "iat_cv": 1.0245832656809553,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 46,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 400.2121212121212,
+        "in_size_mean": 580.5666666666667,
+        "pkt_size_std": 597.2765362635428,
+        "log_pkt_rate": 1.1335389083702174,
+        "iat_cv": 3.3433418232481644,
+        "upload_share": 0.4312630616509927
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 47,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 422.16129032258067,
+        "in_size_mean": 598.2758620689655,
+        "pkt_size_std": 604.2435792423081,
+        "log_pkt_rate": 1.1139433523068367,
+        "iat_cv": 2.392689690578895,
+        "upload_share": 0.42997010217826986
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 48,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 139.11764705882354,
+        "in_size_mean": 195.8421052631579,
+        "pkt_size_std": 297.5627332965497,
+        "log_pkt_rate": 1.187520720836463,
+        "iat_cv": 2.424231883201977,
+        "upload_share": 0.38859677949392046
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 49,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 391.47058823529414,
+        "in_size_mean": 582.1333333333333,
+        "pkt_size_std": 594.0103960251348,
+        "log_pkt_rate": 1.1398790864012365,
+        "iat_cv": 2.716455435496066,
+        "upload_share": 0.43250796126600377
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 50,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 87.78260869565217,
+        "in_size_mean": 310.4,
+        "pkt_size_std": 348.0901193743616,
+        "log_pkt_rate": 0.9822712330395684,
+        "iat_cv": 2.7089954950223936,
+        "upload_share": 0.24541145010331833
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 51,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 678.9411764705883,
+        "in_size_mean": 724.0,
+        "pkt_size_std": 660.8868127349914,
+        "log_pkt_rate": 0.8808135922807914,
+        "iat_cv": 1.2827682895482482,
+        "upload_share": 0.49909193115973366
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 52,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 87.78260869565217,
+        "in_size_mean": 288.1363636363636,
+        "pkt_size_std": 341.18195862162594,
+        "log_pkt_rate": 1.0,
+        "iat_cv": 1.91425187466313,
+        "upload_share": 0.24156496769562097
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 53,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 421.7741935483871,
+        "in_size_mean": 568.3225806451613,
+        "pkt_size_std": 598.3601361198777,
+        "log_pkt_rate": 1.1271047983648077,
+        "iat_cv": 1.77764110303677,
+        "upload_share": 0.4259928974033167
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 54,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 55.666666666666664,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.194092508747381,
+        "log_pkt_rate": 0.6434526764861874,
+        "iat_cv": 1.7908538430781393,
+        "upload_share": 0.4868804664723032
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 55,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 360.1515151515151,
+        "in_size_mean": 539.4444444444445,
+        "pkt_size_std": 576.8830374425035,
+        "log_pkt_rate": 1.1139433523068367,
+        "iat_cv": 2.0759049280413926,
+        "upload_share": 0.44933837429111534
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 56,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 136.34615384615384,
+        "in_size_mean": 379.2916666666667,
+        "pkt_size_std": 432.0037944277804,
+        "log_pkt_rate": 1.0413926851582251,
+        "iat_cv": 1.7975286688648566,
+        "upload_share": 0.28028146742567994
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 57,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 5.989610381815462,
+        "log_pkt_rate": 0.6434526764861874,
+        "iat_cv": 0.7735387189399918,
+        "upload_share": 0.47928994082840237
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 58,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 350.3333333333333,
+        "in_size_mean": 568.5483870967741,
+        "pkt_size_std": 578.8796068127409,
+        "log_pkt_rate": 1.1760912590556813,
+        "iat_cv": 2.27954594208336,
+        "upload_share": 0.43668499105088215
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 59,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 325.65432098765433,
+        "in_size_mean": 470.1044776119403,
+        "pkt_size_std": 527.542240328235,
+        "log_pkt_rate": 1.4857214264815801,
+        "iat_cv": 3.3534850282053403,
+        "upload_share": 0.4557753779697624
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 60,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 470.44827586206895,
+        "in_size_mean": 485.5,
+        "pkt_size_std": 573.4908124036142,
+        "log_pkt_rate": 1.0934216851622351,
+        "iat_cv": 1.822813580743471,
+        "upload_share": 0.500899511693652
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 61,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 89.27272727272727,
+        "in_size_mean": 115.05882352941177,
+        "pkt_size_std": 101.64893627525505,
+        "log_pkt_rate": 0.9444826721501687,
+        "iat_cv": 1.510033869458214,
+        "upload_share": 0.5010204081632653
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 62,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 615.2631578947369,
+        "in_size_mean": 651.7222222222222,
+        "pkt_size_std": 653.8097086577525,
+        "log_pkt_rate": 0.9242792860618817,
+        "iat_cv": 1.5758979152091717,
+        "upload_share": 0.4991247171341958
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 63,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.6989700043360189,
+        "iat_cv": 1.3276461959995767,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 64,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 616.2105263157895,
+        "in_size_mean": 651.6666666666666,
+        "pkt_size_std": 653.4169892725304,
+        "log_pkt_rate": 0.9242792860618817,
+        "iat_cv": 1.3771248238835099,
+        "upload_share": 0.4995306766788975
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 65,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 56.18181818181818,
+        "in_size_mean": 67.6,
+        "pkt_size_std": 8.272019333565128,
+        "log_pkt_rate": 0.7160033436347992,
+        "iat_cv": 1.3246854379549082,
+        "upload_share": 0.4775888717156105
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 66,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 678.9411764705883,
+        "in_size_mean": 650.8888888888889,
+        "pkt_size_std": 658.4248464079609,
+        "log_pkt_rate": 0.9030899869919435,
+        "iat_cv": 1.3006546371544896,
+        "upload_share": 0.49625935162094764
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 67,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 55.5,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.176086489139351,
+        "log_pkt_rate": 0.6812412373755872,
+        "iat_cv": 1.3357732902306971,
+        "upload_share": 0.4830287206266319
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 68,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 60.76923076923077,
+        "in_size_mean": 67.27272727272727,
+        "pkt_size_std": 8.82350081694713,
+        "log_pkt_rate": 0.7634279935629372,
+        "iat_cv": 0.9562859120123818,
+        "upload_share": 0.5163398692810458
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 69,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.6627578316815741,
+        "iat_cv": 1.2421400080263927,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 70,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.6989700043360189,
+        "iat_cv": 1.0858662335306077,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 71,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 59.666666666666664,
+        "in_size_mean": 67.77777777777777,
+        "pkt_size_std": 9.867144684136695,
+        "log_pkt_rate": 0.7160033436347992,
+        "iat_cv": 1.1823021947176937,
+        "upload_share": 0.5399698340874811
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 72,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.6627578316815741,
+        "iat_cv": 1.2430107853646817,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 73,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 57.6,
+        "in_size_mean": 110.58333333333333,
+        "pkt_size_std": 81.59642928907657,
+        "log_pkt_rate": 0.7323937598229685,
+        "iat_cv": 1.071963254601439,
+        "upload_share": 0.30267997898055704
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 74,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 142.88095238095238,
+        "in_size_mean": 282.25,
+        "pkt_size_std": 377.9261714100628,
+        "log_pkt_rate": 1.2966651902615312,
+        "iat_cv": 1.8818031092644965,
+        "upload_share": 0.2902118193248864
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 75,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 75.0,
+        "pkt_size_std": 22.669117514559073,
+        "log_pkt_rate": 0.6627578316815741,
+        "iat_cv": 0.8397618672564161,
+        "upload_share": 0.36548223350253806
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 76,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 72.36363636363636,
+        "pkt_size_std": 22.049716551466148,
+        "log_pkt_rate": 0.6989700043360189,
+        "iat_cv": 0.7513807943416496,
+        "upload_share": 0.3790951638065523
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 77,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.0,
+        "log_pkt_rate": 0.6627578316815741,
+        "iat_cv": 0.8389635268704158,
+        "upload_share": 0.45
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 78,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 5.989610381815462,
+        "log_pkt_rate": 0.6434526764861874,
+        "iat_cv": 0.7819407505364562,
+        "upload_share": 0.47928994082840237
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 79,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 5.991683987687456,
+        "log_pkt_rate": 0.6812412373755872,
+        "iat_cv": 0.7779083145249502,
+        "upload_share": 0.42408376963350786
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 80,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 66.66666666666667,
+        "in_size_mean": 102.45454545454545,
+        "pkt_size_std": 47.03833452551054,
+        "log_pkt_rate": 0.7481880270062004,
+        "iat_cv": 1.1151233712564452,
+        "upload_share": 0.4151530877010898
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 81,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 56.72727272727273,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 6.3,
+        "log_pkt_rate": 0.6989700043360189,
+        "iat_cv": 0.8985709566571937,
+        "upload_share": 0.5123152709359606
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 82,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 84.11111111111111,
+        "pkt_size_std": 36.42023604742287,
+        "log_pkt_rate": 0.6232492903979004,
+        "iat_cv": 1.7507398886006476,
+        "upload_share": 0.33303964757709253
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 83,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 68.28571428571429,
+        "pkt_size_std": 8.221777979007623,
+        "log_pkt_rate": 0.5563025007672873,
+        "iat_cv": 1.7460420344430312,
+        "upload_share": 0.40399002493765584
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 84,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 5.986651818838306,
+        "log_pkt_rate": 0.6020599913279624,
+        "iat_cv": 1.693246342399056,
+        "upload_share": 0.48322147651006714
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 85,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 188.7719298245614,
+        "in_size_mean": 480.3707865168539,
+        "pkt_size_std": 485.3667143884505,
+        "log_pkt_rate": 1.6190933306267428,
+        "iat_cv": 4.05706359826403,
+        "upload_share": 0.33482177586233725
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 86,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 70.0,
+        "in_size_mean": 90.47368421052632,
+        "pkt_size_std": 42.89160907581889,
+        "log_pkt_rate": 1.0334237554869496,
+        "iat_cv": 1.1740477665584925,
+        "upload_share": 0.5498821681068342
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 87,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 206.36111111111111,
+        "in_size_mean": 633.34375,
+        "pkt_size_std": 556.9409108699882,
+        "log_pkt_rate": 1.1643528557844371,
+        "iat_cv": 2.045189831498884,
+        "upload_share": 0.26823367995378394
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 88,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 55.6,
+        "in_size_mean": 66.8,
+        "pkt_size_std": 6.7646138101151045,
+        "log_pkt_rate": 0.6989700043360189,
+        "iat_cv": 0.9426458061499695,
+        "upload_share": 0.4542483660130719
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 89,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 56.18181818181818,
+        "in_size_mean": 67.6,
+        "pkt_size_std": 8.27201933356513,
+        "log_pkt_rate": 0.7160033436347992,
+        "iat_cv": 1.328864782828214,
+        "upload_share": 0.4775888717156105
+      }
+    },
+    {
+      "scenario": "beaconing",
+      "category": "attack_shaped",
+      "attack_mix": "beaconing",
+      "tick_index": 90,
+      "n_ticks_in_scenario": 91,
+      "features": {
+        "out_size_mean": 54.0,
+        "in_size_mean": 66.0,
+        "pkt_size_std": 5.878775382679627,
+        "log_pkt_rate": 0.3010299956639812,
+        "iat_cv": 1.2404553650863386,
+        "upload_share": 0.35294117647058826
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 0,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 12911.058855002675,
+        "in_size_mean": 56.02823529411765,
+        "pkt_size_std": 7795.700483571691,
+        "log_pkt_rate": 2.6625689669332604,
+        "iat_cv": 9.830453480369002,
+        "upload_share": 0.9990141828583158
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 1,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.0,
+        "pkt_size_std": 7656.773438241002,
+        "log_pkt_rate": 2.6828667956623247,
+        "iat_cv": 2.2457534189151755,
+        "upload_share": 0.999141372371136
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 2,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.15513126491647,
+        "pkt_size_std": 7680.809014123727,
+        "log_pkt_rate": 2.68556261115823,
+        "iat_cv": 2.2542553877239127,
+        "upload_share": 0.9991070564174954
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 3,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.17224880382775,
+        "pkt_size_std": 7679.2300637425615,
+        "log_pkt_rate": 2.6853834098014873,
+        "iat_cv": 2.2543235344582166,
+        "upload_share": 0.999108914347997
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 4,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.0,
+        "pkt_size_std": 7658.408719485741,
+        "log_pkt_rate": 2.6830470382388496,
+        "iat_cv": 2.2440756597736864,
+        "upload_share": 0.999139248884591
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 5,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.0,
+        "pkt_size_std": 7655.133757329525,
+        "log_pkt_rate": 2.682686478249768,
+        "iat_cv": 2.2464912657859344,
+        "upload_share": 0.9991434958667071
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 6,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.0,
+        "pkt_size_std": 7653.489665503356,
+        "log_pkt_rate": 2.682506085939011,
+        "iat_cv": 2.3256366303245106,
+        "upload_share": 0.9991456193713046
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 7,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.0,
+        "pkt_size_std": 7655.14610220102,
+        "log_pkt_rate": 2.6816029987308685,
+        "iat_cv": 2.244139472252863,
+        "upload_share": 0.9991434799005414
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 8,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.0,
+        "pkt_size_std": 7655.133757329525,
+        "log_pkt_rate": 2.682686478249768,
+        "iat_cv": 2.240444153806687,
+        "upload_share": 0.9991434958667071
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 9,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.0,
+        "pkt_size_std": 7653.489665503356,
+        "log_pkt_rate": 2.682506085939011,
+        "iat_cv": 2.2456210982784452,
+        "upload_share": 0.9991456193713046
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 10,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.0,
+        "pkt_size_std": 7655.133757329525,
+        "log_pkt_rate": 2.682686478249768,
+        "iat_cv": 2.2450013239221573,
+        "upload_share": 0.9991434958667071
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 11,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.0,
+        "pkt_size_std": 7653.489665503356,
+        "log_pkt_rate": 2.682506085939011,
+        "iat_cv": 2.241370923681963,
+        "upload_share": 0.9991456193713046
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 12,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.0,
+        "pkt_size_std": 7656.773438241002,
+        "log_pkt_rate": 2.6828667956623247,
+        "iat_cv": 2.2432882933455516,
+        "upload_share": 0.999141372371136
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 13,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.0,
+        "pkt_size_std": 7655.133757329525,
+        "log_pkt_rate": 2.682686478249768,
+        "iat_cv": 2.2454485334122896,
+        "upload_share": 0.9991434958667071
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 14,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.0,
+        "pkt_size_std": 7651.841151477623,
+        "log_pkt_rate": 2.6823256186678073,
+        "iat_cv": 2.2481448491145217,
+        "upload_share": 0.9991477428849282
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 15,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.15513126491647,
+        "pkt_size_std": 7680.809014123727,
+        "log_pkt_rate": 2.68556261115823,
+        "iat_cv": 2.2492974991938564,
+        "upload_share": 0.9991070564174954
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 16,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.17505995203837,
+        "pkt_size_std": 7677.650345198471,
+        "log_pkt_rate": 2.6852041344710145,
+        "iat_cv": 2.2546798481235566,
+        "upload_share": 0.9991109997884237
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 17,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.0,
+        "pkt_size_std": 7655.14610220102,
+        "log_pkt_rate": 2.6816029987308685,
+        "iat_cv": 2.2483791602422882,
+        "upload_share": 0.9991434799005414
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 18,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.0,
+        "pkt_size_std": 7655.133757329525,
+        "log_pkt_rate": 2.682686478249768,
+        "iat_cv": 2.2424178242092787,
+        "upload_share": 0.9991434958667071
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 19,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.0,
+        "pkt_size_std": 7653.489665503356,
+        "log_pkt_rate": 2.682506085939011,
+        "iat_cv": 2.245131073180017,
+        "upload_share": 0.9991456193713046
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 20,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.0,
+        "pkt_size_std": 7653.489665503356,
+        "log_pkt_rate": 2.682506085939011,
+        "iat_cv": 2.2420454419450055,
+        "upload_share": 0.9991456193713046
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 21,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.0,
+        "pkt_size_std": 7656.773438241002,
+        "log_pkt_rate": 2.6828667956623247,
+        "iat_cv": 2.2471032083896163,
+        "upload_share": 0.999141372371136
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 22,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.0,
+        "pkt_size_std": 7653.489665503356,
+        "log_pkt_rate": 2.682506085939011,
+        "iat_cv": 2.244611571876751,
+        "upload_share": 0.9991456193713046
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 23,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 13163.2,
+        "in_size_mean": 56.0,
+        "pkt_size_std": 7656.773438241002,
+        "log_pkt_rate": 2.6828667956623247,
+        "iat_cv": 2.249700983671238,
+        "upload_share": 0.999141372371136
+      }
+    },
+    {
+      "scenario": "bulk_upload",
+      "category": "attack_shaped",
+      "attack_mix": "exfiltration",
+      "tick_index": 24,
+      "n_ticks_in_scenario": 25,
+      "features": {
+        "out_size_mean": 10138.461538461539,
+        "in_size_mean": 73.6,
+        "pkt_size_std": 8090.628543087504,
+        "log_pkt_rate": 0.6627578316815741,
+        "iat_cv": 2.3744926365658783,
+        "upload_share": 0.997215664911325
+      }
+    },
+    {
+      "scenario": "port_scan",
+      "category": "attack_shaped",
+      "attack_mix": "port_scan",
+      "tick_index": 0,
+      "n_ticks_in_scenario": 1,
+      "features": {
+        "out_size_mean": 48.0,
+        "in_size_mean": 44.00103734439834,
+        "pkt_size_std": 1.9999999831818356,
+        "log_pkt_rate": 4.418606184975227,
+        "iat_cv": 1.4807470701004244,
+        "upload_share": 0.5216685273520755
+      }
+    }
+  ]
+}

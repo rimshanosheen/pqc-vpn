@@ -20,9 +20,13 @@ integration.
 | `state_vector.json` | Member 1 (`core/state/`) | The 7-dim observation contract: index order, ranges, semantics, and the normalization caps `StateObserver` currently applies. |
 | `policy_test_vectors.json` | Member 1 (`core/rl/`) | 63 states with the exact logits the Python model produces, for verifying the Rust `ort` wrapper. |
 | `decision_gate_vectors.json` | Member 1 (`core/rl/`) | Tick-by-tick expected output of the decision gate — the debounce that sits between the policy's argmax and the crypto layer. Added Week 3. |
+| `anomaly_vectors.json` | Member 1 (`core/anomaly/`) | Tick-by-tick expected output of `AnomalyCombiner` (Layers 1-3, under their CPU gates) for named scenarios. Ties to whichever `isolation_forest.joblib`/calibration generated it — regenerate after every retrain. Added Week 8. |
+| `isolation_forest_test_vectors.json` | Member 1 (`core/anomaly/forest.rs`) | Representative feature vectors with sklearn's own `score_samples()` output, for verifying the Rust tree-walker at both the raw-score and calibrated-threat-score level. Added Week 8. |
 | `manifest.json` | Members 1 and 2 | SHA-256 of every artifact above plus the git commit they came from, so a stale copy is detectable instead of silently wrong. Added Week 3. |
 | `INTEGRATION.md` | Members 1 and 2 | Step-by-step: build the state vector, run the policy, verify the port, gate the decision, act on it. **Start here.** |
 | `../client/rl_agent/models/ppo_vpn_agent.onnx` | Member 1 (`core/rl/`) | The policy itself. Self-contained single file — no sidecar weights. |
+| `../client/rl_agent/models/isolation_forest.joblib` + `isolation_forest_calibration.json` | Member 1 (`core/anomaly/forest.rs`, indirectly) | Layer 3's trained model and its score_median/score_threshold calibration. Not consumed directly by Rust — `isolation_forest_trees.json` below is the tree-structure export the Rust port actually embeds. |
+| `../client/rl_agent/models/isolation_forest_trees.json` | Member 1 (`core/anomaly/forest.rs`) | Every tree's `feature`/`threshold`/`children_left`/`children_right` plus a precomputed per-leaf path-length correction, embedded via `include_str!` so the Rust tree-walker needs no sklearn reimplementation. Added Week 8. |
 
 ## The model artifact
 
@@ -70,7 +74,9 @@ Current weights are from the Week 2 run `F_ep4_full_s1` (300k timesteps),
 which agrees with the analytically optimal action on 99.3% of states and
 selects all four actions. Week 3's verification qualifies that headline: the
 agreement is ~51% on the small band where `security_need >= 0.90`, which is a
-known open defect with a diagnosed cause, not a mystery. `PROGRESS.md` documents what has and has not
+known defect with a diagnosed cause, not a mystery. Its fix is decided
+(`DECISIONS.md` Decision 2: Option B) and scheduled as a Week 11 retrain and
+re-export, deliberately after Member 1's Week 7 integration. `PROGRESS.md` documents what has and has not
 been established about it — in particular, "optimal" there means optimal
 with respect to a hand-designed reward in a simulator, not a measured
 security outcome.

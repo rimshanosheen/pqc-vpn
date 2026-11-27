@@ -1,33 +1,53 @@
 {
   "schema_version": 1,
   "generated_by": "python -m client.rl_agent.export_contracts",
-  "generated_at_utc": "2026-09-11T06:06:07Z",
+  "generated_at_utc": "2026-11-27T06:26:46Z",
   "git_commit": {
-    "head": "b5e12844b5be6b333066ff494e0dcfedc5feda18",
+    "head": "ebf8b90adf536eb51eef2239147eb3c6c49b87c3",
     "tree_dirty": true,
     "note": "generated from the working tree; when tree_dirty is true the artifacts do not correspond to `head` but to the commit made immediately after it"
   },
   "note": "Verify every artifact against these digests after copying them into another repo. A mismatch means the set is not the one this manifest describes; re-run the generator rather than guessing which file is stale.",
   "artifacts": {
     "contracts/algo_registry.json": {
-      "sha256": "5b2880d44e9549a19a78ec640e14fcb47978e8c54a8993b25bb2aeda983a93dc",
-      "bytes": 1694
+      "sha256": "77c3d88df34fae21a0bb170a84a790469d04640df903608f261dbb88b923754e",
+      "bytes": 1750
     },
     "contracts/state_vector.json": {
-      "sha256": "52bef7c99ec5ab80e0aca4aacc9216f2a87a4170f175ec22b00ef94481e922f3",
-      "bytes": 2585
+      "sha256": "8f5bd45993f2d2fe530341d21a03327c36e7f8ffd45b7d2a2b4f96c61c3e86d5",
+      "bytes": 2610
     },
     "contracts/policy_test_vectors.json": {
       "sha256": "4bc76fe6cbd9a048c18d5b667bbfa69d1b2d7731e9f7ddd77074aadadf11bdfb",
       "bytes": 23319
     },
     "contracts/decision_gate_vectors.json": {
-      "sha256": "b0c51fe6b42bcc002df23c3cb362ff651acce838e97d5e77a488f1901b076660",
-      "bytes": 11046
+      "sha256": "5b5eec05bf05b3077ca899083ca5686ead96a496033a2d1d31f6c35761b4f638",
+      "bytes": 14631
+    },
+    "contracts/anomaly_vectors.json": {
+      "sha256": "9afd8d72bd579ddb941ec950df9bcb63aecc890db65fdb0bb0fc0d3868f49703",
+      "bytes": 143745
+    },
+    "contracts/isolation_forest_test_vectors.json": {
+      "sha256": "afb502f55b76a87b796a1f5814abc515eebeb6366a7b8278461cb734065eaf5e",
+      "bytes": 26242
     },
     "client/rl_agent/models/ppo_vpn_agent.onnx": {
-      "sha256": "18a491fef74a82356de6b13480259e1bb895e82a3542be183a286cff6cedfaaa",
+      "sha256": "edb13352b450a487d18baf00aadb85bb69124b90f0014f406e2296f3c405d751",
       "bytes": 29693
+    },
+    "client/rl_agent/models/isolation_forest.joblib": {
+      "sha256": "c4fc6f90583d01e38e591aee7d5dd1b27d18e1a20c126e72bb88bdb8405d0356",
+      "bytes": 386726
+    },
+    "client/rl_agent/models/isolation_forest_calibration.json": {
+      "sha256": "9a7e76fd670585f47f23b35722e27ab9364e23b2bbc51528734a7873fd8e9fac",
+      "bytes": 7177
+    },
+    "client/rl_agent/models/isolation_forest_trees.json": {
+      "sha256": "cbeb6027e58b6ffca341d6bf7d7186104ec66c9b63c5081eae94569fed96415a",
+      "bytes": 1205446
     }
   }
 }
