@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "generated_by": "python -m client.rl_agent.export_contracts",
-  "generated_at_utc": "2026-11-26T20:31:06Z",
+  "generated_at_utc": "2026-11-27T06:26:46Z",
   "git_commit": {
-    "head": "1fbd536d1cb310cbeebce761f72ac6fea1e163e5",
+    "head": "ebf8b90adf536eb51eef2239147eb3c6c49b87c3",
     "tree_dirty": true,
     "note": "generated from the working tree; when tree_dirty is true the artifacts do not correspond to `head` but to the commit made immediately after it"
   },
@@ -26,28 +26,28 @@
       "bytes": 14631
     },
     "contracts/anomaly_vectors.json": {
-      "sha256": "bce53679da6dbcca7019ed3307186d10854d4dd3e67b63d86dad525f2c4b37c4",
-      "bytes": 143765
+      "sha256": "9afd8d72bd579ddb941ec950df9bcb63aecc890db65fdb0bb0fc0d3868f49703",
+      "bytes": 143745
     },
     "contracts/isolation_forest_test_vectors.json": {
-      "sha256": "eb576c0010aa258760d47407c9dc312cbab4abbb640bb5d041de6ee2278b89ce",
-      "bytes": 26263
+      "sha256": "afb502f55b76a87b796a1f5814abc515eebeb6366a7b8278461cb734065eaf5e",
+      "bytes": 26242
     },
     "client/rl_agent/models/ppo_vpn_agent.onnx": {
       "sha256": "edb13352b450a487d18baf00aadb85bb69124b90f0014f406e2296f3c405d751",
       "bytes": 29693
     },
     "client/rl_agent/models/isolation_forest.joblib": {
-      "sha256": "06d8be0d788f495abaa13964d3c9ad484ee788f15575af712a65553426d2f4f7",
-      "bytes": 412361
+      "sha256": "c4fc6f90583d01e38e591aee7d5dd1b27d18e1a20c126e72bb88bdb8405d0356",
+      "bytes": 386726
     },
     "client/rl_agent/models/isolation_forest_calibration.json": {
-      "sha256": "3f2e59beefe1b029aa10ea5a4897d1884f82c68081bc40197baac838ceb91132",
-      "bytes": 5462
+      "sha256": "9a7e76fd670585f47f23b35722e27ab9364e23b2bbc51528734a7873fd8e9fac",
+      "bytes": 7177
     },
     "client/rl_agent/models/isolation_forest_trees.json": {
-      "sha256": "b34d7b14aafe9ea0d75412a91abb3e245e2abc078d96b1199c2d3684767e2735",
-      "bytes": 1290152
+      "sha256": "cbeb6027e58b6ffca341d6bf7d7186104ec66c9b63c5081eae94569fed96415a",
+      "bytes": 1205446
     }
   }
 }

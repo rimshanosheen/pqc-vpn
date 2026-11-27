@@ -92,13 +92,41 @@ case "$SCENARIO" in
         DURATION="${2:-120}"
         start_capture lo0
         TMPFILE="$(mktemp)"
-        head -c 200000000 /dev/urandom > "$TMPFILE"   # 200MB, one sustained push
-        nc -l "$NC_PORT" > /dev/null &
-        NC_LISTENER_PID=$!
+        RATE_MB=5
+        TOTAL_BYTES=$((RATE_MB * 1024 * 1024 * DURATION))
+        head -c "$TOTAL_BYTES" /dev/urandom > "$TMPFILE"
+        # Plain BSD nc's stream-closing semantics on macOS were verified
+        # unreliable for a one-shot bulk transfer (truncated after a few
+        # KB); an HTTP PUT has explicit Content-Length framing instead.
+        # An UNTHROTTLED push was also verified to overrun tcpdump's
+        # capture buffer under sudo (68% of packets silently dropped by
+        # the kernel) -- --limit-rate paces it to something tcpdump can
+        # keep up with, which also better matches what a real sustained
+        # exfiltration actually looks like (see EXFIL_UPLOAD_BPS_THRESHOLD)
+        # than an instant burst would.
+        python3 -c "
+import http.server, socketserver
+class H(http.server.BaseHTTPRequestHandler):
+    def do_PUT(self):
+        remaining = int(self.headers.get('Content-Length', 0))
+        while remaining > 0:
+            chunk = self.rfile.read(min(65536, remaining))
+            if not chunk:
+                break
+            remaining -= len(chunk)
+        self.send_response(200)
+        self.end_headers()
+    def log_message(self, *a): pass
+with socketserver.TCPServer(('127.0.0.1', $NC_PORT), H) as httpd:
+    httpd.handle_request()
+" &
+        SERVER_PID=$!
         sleep 1
-        cat "$TMPFILE" | nc -w "$DURATION" 127.0.0.1 "$NC_PORT" || true
-        kill "$NC_LISTENER_PID" 2>/dev/null || true
+        curl -s -X PUT --limit-rate "${RATE_MB}M" --data-binary "@$TMPFILE" \
+            "http://127.0.0.1:$NC_PORT/upload" -o /dev/null
+        wait "$SERVER_PID" 2>/dev/null || true
         rm -f "$TMPFILE"
+        sleep 2   # grace period for tcpdump to flush before SIGINT (see port_scan)
         stop_capture
         ;;
 

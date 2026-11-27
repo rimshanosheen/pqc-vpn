@@ -2,9 +2,10 @@
 cryptography==42.0.8
 keyring==25.7.0
 
-# liboqs-python is NOT on PyPI — build liboqs (C library) from source,
-# then install the Python wrapper from https://github.com/open-quantum-safe/liboqs-python
-# liboqs-python==0.14.0
+# liboqs-python is NOT on PyPI. Build liboqs (the C library) from source via
+# cmake+ninja, then: pip install git+https://github.com/open-quantum-safe/liboqs-python.git@0.12.0
+# (0.14.0 was a placeholder here; no such tag exists -- 0.12.0 is the real
+# liboqs-python release confirmed working against liboqs 0.12.0-0.15.0.)
 
 # RL agent (Phase 2)
 gymnasium==0.29.1
