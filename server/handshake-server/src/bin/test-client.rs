@@ -10,6 +10,10 @@
 //! `--wg-endpoint` defaults to the handshake host (the WireGuard UDP port comes
 //! from the server).
 //!
+//! `--relay` (Week 8): print `Endpoint = 127.0.0.1:51820` instead, for use
+//! with a local `wg-relay client` on networks that block WireGuard's UDP.
+//! `--out FILE` also writes the config to FILE, ready to import.
+//!
 //! Rekey (Week 6) — reuse the session id and wg keypair a first run printed to
 //! exercise `RekeyRequest` against an *existing* peer, live:
 //!   test-client <host:port> <vk-hex|@path> --rekey --session <hex>
@@ -37,7 +41,7 @@ fn main() -> Result<()> {
     let mut args = std::env::args().skip(1);
     let hs_addr = args.next().context(
         "usage: test-client <host:port> <vk-hex|@path> [--algo N] [--wg-endpoint HOST] \
-         [--rekey --session <hex> --wg-key <base64|@path>]",
+         [--relay] [--out FILE] [--rekey --session <hex> --wg-key <base64|@path>]",
     )?;
     let vk_arg = args.next().context("need the server verifying key (hex or @path)")?;
 
@@ -46,6 +50,8 @@ fn main() -> Result<()> {
     let mut rekey = false;
     let mut session_arg: Option<String> = None;
     let mut wg_key_arg: Option<String> = None;
+    let mut via_relay = false;
+    let mut out_path: Option<String> = None;
     while let Some(a) = args.next() {
         match a.as_str() {
             "--algo" => {
@@ -60,6 +66,8 @@ fn main() -> Result<()> {
             "--rekey" => rekey = true,
             "--session" => session_arg = args.next(),
             "--wg-key" => wg_key_arg = args.next(),
+            "--relay" => via_relay = true,
+            "--out" => out_path = Some(args.next().context("--out needs a file path")?),
             other => bail!("unknown argument {other}"),
         }
     }
@@ -178,18 +186,37 @@ fn main() -> Result<()> {
     println!("  server wg pub  : {}", B64.encode(sf.server_wg_pubkey));
     println!("  wg endpoint    : {endpoint_host}:{}", sf.wg_port);
     println!();
+    // Through a local `wg-relay client`, WireGuard talks to the relay on
+    // loopback; the relay carries it to the server over TCP.
+    let endpoint = if via_relay {
+        "127.0.0.1:51820".to_string()
+    } else {
+        format!("{endpoint_host}:{}", sf.wg_port)
+    };
+    let config = [
+        "[Interface]".to_string(),
+        format!("PrivateKey = {}", B64.encode(wg_private.to_bytes())),
+        format!("Address    = {assigned_ip}/24"),
+        String::new(),
+        "[Peer]".to_string(),
+        format!("PublicKey    = {}", B64.encode(sf.server_wg_pubkey)),
+        format!("PresharedKey = {}", B64.encode(keys.psk)),
+        format!("Endpoint     = {endpoint}"),
+        format!("AllowedIPs   = {}.0/24", trim_last_octet(&assigned_ip)),
+        "PersistentKeepalive = 25".to_string(),
+    ]
+    .join("\n")
+        + "\n";
     println!("----- wg-quick config (save as pqc0.conf) -----");
-    println!("[Interface]");
-    println!("PrivateKey = {}", B64.encode(wg_private.to_bytes()));
-    println!("Address    = {assigned_ip}/24");
+    print!("{config}");
     println!();
-    println!("[Peer]");
-    println!("PublicKey    = {}", B64.encode(sf.server_wg_pubkey));
-    println!("PresharedKey = {}", B64.encode(keys.psk));
-    println!("Endpoint     = {endpoint_host}:{}", sf.wg_port);
-    println!("AllowedIPs   = {}.0/24", trim_last_octet(&assigned_ip));
-    println!("PersistentKeepalive = 25");
-    println!();
+    if let Some(path) = &out_path {
+        std::fs::write(path, &config).with_context(|| format!("writing {path}"))?;
+        println!("config written to {path}  (import it in the WireGuard app)");
+    }
+    if via_relay {
+        println!("Endpoint is the local relay: keep `wg-relay client --server <host>:443` running.");
+    }
     println!("Rekey this peer later with:");
     println!(
         "  test-client {hs_addr} <vk> --rekey --session {} --wg-key {}",

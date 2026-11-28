@@ -11,7 +11,8 @@ venv
 __pycache__
 **/__pycache__
 *.pyc
-client/rl_agent/models
+# client/rl_agent/models is NOT ignored: since Weeks 7-8 vpn_core embeds the
+# ONNX policy and the Isolation Forest JSON from it at compile time (~2 MB).
 notebooks
 dashboard
 

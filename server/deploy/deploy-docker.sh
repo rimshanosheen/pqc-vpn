@@ -5,7 +5,7 @@
 #
 #     bash server/deploy/deploy-docker.sh [DROPLET_IP] [SSH_USER]
 #
-# Defaults: 139.59.62.4  member2
+# Defaults: 168.144.73.113  member2
 #
 # Installs Docker on the droplet if needed, ships the current working tree as the
 # build context (works with uncommitted changes), stops the systemd service, and
@@ -14,7 +14,7 @@
 
 set -euo pipefail
 
-IP="${1:-139.59.62.4}"
+IP="${1:-168.144.73.113}"
 SSH_USER="${2:-member2}"
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 REMOTE_SRC=/opt/pqc-vpn-src
@@ -29,10 +29,12 @@ ssh_do 'command -v docker >/dev/null || {
 }'
 
 echo "==> packaging build context"
+# client/rl_agent/models/ is NOT excluded: since Weeks 7-8 vpn_core embeds the
+# ONNX policy and the Isolation Forest JSON from it at compile time (~2 MB).
 tar czf /tmp/pqc-ctx.tar.gz -C "$REPO" \
     --exclude='./.git' --exclude='./target' --exclude='*/target' \
     --exclude='./venv' --exclude='*/node_modules' --exclude='./node_modules' \
-    --exclude='./client/rl_agent/models' --exclude='./notebooks' \
+    --exclude='./notebooks' \
     --exclude='./dashboard' --exclude='*.pyc' \
     .
 

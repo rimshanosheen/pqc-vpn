@@ -31,7 +31,7 @@ use crate::device_state::SysinfoDeviceState;
 use crate::traffic::SystemTrafficSignals;
 
 /// Member 2's droplet (`PROGRESS.md`, Member 2 Week 1), handshake port.
-pub const DEFAULT_SERVER_ADDR: &str = "139.59.62.4:51821";
+pub const DEFAULT_SERVER_ADDR: &str = "168.144.73.113:51821";
 /// That server's ML-DSA-65 key, pinned in the client
 /// (`server/PROTOCOL.md` §5.2: shipped with the installer, never fetched).
 pub const DEFAULT_VERIFYING_KEY_HEX: &str = include_str!("../../../server-vk.hex");

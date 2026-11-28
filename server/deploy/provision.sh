@@ -49,7 +49,7 @@ KbdInteractiveAuthentication no
 EOF
 systemctl restart ssh
 
-echo "==> Firewall (ufw): SSH + WireGuard 51820/udp + handshake 51821/tcp"
+echo "==> Firewall (ufw): SSH + WireGuard 51820/udp + handshake 51821/tcp + wg-relay 443/tcp"
 apt-get update -qq
 DEBIAN_FRONTEND=noninteractive apt-get install -y ufw >/dev/null
 ufw --force reset >/dev/null
@@ -58,6 +58,7 @@ ufw default allow outgoing
 ufw allow OpenSSH
 ufw allow 51820/udp comment 'WireGuard'
 ufw allow 51821/tcp comment 'PQC handshake'
+ufw allow 443/tcp comment 'wg-relay (WireGuard over TCP, Week 8)'
 ufw --force enable
 
 echo "==> Automatic security updates"

@@ -23,6 +23,7 @@ persistence, peer/tunnel management, and a blocking TCP server.
 | `registry` | multi-peer registry: session ↔ wg peer ↔ tunnel address, persisted to `peers.json` (no PSKs); capacity limit; startup reconciliation against `wg0` |
 | `guard` | Week 7: `client_nonce` replay cache, per-IP token-bucket rate limit, concurrent-connection cap (`PROTOCOL.md` §7) |
 | `server` | TCP accept loop (admission via `guard`) + per-connection handler; updates the registry and installs the PSK; optional idle sweep |
+| `relay` | Week 8: obfuscated UDP-over-TCP transport for WireGuard's data plane, for networks that block WireGuard (`wg-relay` binary) |
 
 ## Binaries
 
@@ -42,6 +43,12 @@ cargo run -p handshake-server --bin handshake-server -- \
 # throwaway test client — full handshake, then prints a wg-quick client config
 cargo run -p handshake-server --bin test-client -- \
     <handshake-host:port> <verifying-key-hex | @path> --algo 512|768|1024
+#   --relay      print Endpoint = 127.0.0.1:51820 (use with `wg-relay client`)
+#   --out FILE   also write the config to FILE, ready to import
+
+# WireGuard over TCP (Week 8) — see ../CONNECTING.md for the full how-to
+cargo run -p handshake-server --bin wg-relay -- server --listen 0.0.0.0:443 --forward 127.0.0.1:51820
+cargo run -p handshake-server --bin wg-relay -- client --server <host>:443   # Endpoint = 127.0.0.1:51820
 
 # rekey the same peer (Week 6) — reuses the session id + wg keypair the run
 # above printed; prints the new PSK and a `wg set` line to hot-swap it live
@@ -78,14 +85,26 @@ Since Week 7, `guarded_*` tests run the real `server::serve` accept loop with a
 no difference. A mutation check (replay check disabled) fails exactly the
 three replay tests.
 
+Since Week 8, `src/relay.rs` unit tests cover the obfuscated framing (round
+trip, no WireGuard header or length visible on the wire, varying frame sizes,
+per-nonce/per-direction keystreams, malformed and truncated frames), and
+`tests/relay.rs` runs the full chain — app → relay client → TCP → relay server
+→ a fake `wg0` and back — for WireGuard's real message sizes, a burst (datagram
+boundaries preserved), two independent clients, and the WireGuard app
+restarting on a new port (the Windows `WSAECONNRESET` case found live).
+
 ## Not yet done (later weeks)
 
 - **Peers live in `wg0` + `peers.json`, not written into `wg0.conf`.** After a
   `wg0` restart the peers are gone from the interface but kept in the registry;
   their clients re-handshake. (Writing `wg0.conf` for true persistence is
   possible later; the registry + reconciliation covers the container case.)
-- **Idle eviction** is implemented (`--idle-timeout-secs`) but off by default;
-  real use is Week 9/10.
+- **Idle eviction** (`--idle-timeout-secs`) is off by default in the binary;
+  the Docker image turns it on at 3600 s (Week 8).
+- **The relay's obfuscation is camouflage only** — a public keystream, no
+  TLS. It beats the WireGuard-signature blocking seen so far; a stronger
+  disguise (real TLS) is possible later if networks start flagging random
+  streams.
 - Blocking thread-per-connection is fine at this stage; revisit for the Week 10
   soak test.
 

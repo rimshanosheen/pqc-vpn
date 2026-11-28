@@ -6,14 +6,14 @@
 #
 #     bash server/deploy/deploy-handshake-server.sh [DROPLET_IP] [SSH_USER]
 #
-# Defaults: 139.59.62.4  member2
+# Defaults: 168.144.73.113  member2
 #
 # Idempotent. The server's ML-DSA-65 identity is generated on first start and
 # persisted at /var/lib/pqc-vpn/server-identity.seed — it survives redeploys.
 
 set -euo pipefail
 
-IP="${1:-139.59.62.4}"
+IP="${1:-168.144.73.113}"
 SSH_USER="${2:-member2}"
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$REPO"

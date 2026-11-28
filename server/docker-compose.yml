@@ -40,3 +40,25 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  # WireGuard-over-TCP relay (Week 8). Networks that block WireGuard's UDP
+  # (seen on eduroam and a mobile hotspot) still pass plain TCP, so clients
+  # run `wg-relay client --server <host>:443` and point their WireGuard
+  # Endpoint at 127.0.0.1:51820. Forwards ONLY to the local wg0 port.
+  wg-relay:
+    image: pqc-vpn/handshake-server:latest
+    container_name: pqc-wg-relay
+    restart: unless-stopped
+    depends_on: [handshake-server]
+    network_mode: host
+    entrypoint: ["/usr/local/bin/wg-relay"]
+    command: ["server", "--listen", "0.0.0.0:443", "--forward", "127.0.0.1:51820", "--max-conns", "64"]
+    cap_drop: ["ALL"]
+    cap_add: ["NET_BIND_SERVICE"]   # :443 is a privileged port
+    security_opt: ["no-new-privileges:true"]
+    read_only: true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

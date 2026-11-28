@@ -18,6 +18,10 @@ name = "test-client"
 path = "src/bin/test-client.rs"
 
 [[bin]]
+name = "wg-relay"
+path = "src/bin/wg-relay.rs"
+
+[[bin]]
 name = "emit-vectors"
 path = "src/bin/emit-vectors.rs"
 

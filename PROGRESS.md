@@ -2161,6 +2161,233 @@ handshake rate limiting (per-IP token bucket plus a server-wide connection
 cap), all refused before any PQC work, with no protocol change, and
 `core/` and `contracts/` untouched.
 
+## Week 8 (Member 2 track, 2026-11-28) — vertical slice on a rebuilt server, and WireGuard over a blocked network
+
+Assigned task (`TEAM_TIMELINE_PROPOSAL.md`): **checkpoint, first full
+vertical slice**, working with Members 1 and 3. That meant a real desktop
+client, a real agent decision and a real handshake against Member 2's real
+server. Member 1's Week 8 had already run the slice against a local server;
+the run against the droplet was the open item.
+
+Doing it surfaced two problems. Neither was in the PQC design. The droplet
+had to be rebuilt from scratch, and **WireGuard's own UDP traffic turned out
+to be blocked on the networks the team actually uses**. Most of the week went
+into diagnosing that and fixing it.
+
+### Server rebuilt: `168.144.73.113`
+
+The original droplet (`139.59.62.4`) was deleted while the DigitalOcean
+subscription was paused. The new one is the same spec (Ubuntu 24.04, 1 GB,
+BLR1) and was provisioned with the existing scripts: `provision.sh`,
+`wireguard-baseline.sh` and `deploy-docker.sh`. Login is `member2` only, root
+SSH is off, and ufw allows only SSH, 51820/udp, 51821/tcp and now 443/tcp.
+There is a 2 GB swap file, and `wg0` is enabled on boot.
+
+**New server identity.** The ML-DSA-65 key was regenerated and its verifying
+key now starts `472e194b…`. `server-vk.hex` is updated. So is the default
+server address in `desktop/src-tauri/src/vpn.rs` (`DEFAULT_SERVER_ADDR`),
+which is the only line of Member 1's code touched, plus the default IP in
+both deploy scripts. **Anyone running the app must pull**, otherwise their
+build pins the dead key.
+
+**Three build failures, all from `vpn_core` growing since Week 6.** None of
+them was a code bug:
+
+1. **Missing embedded files.** `vpn_core` now uses `include_bytes!` /
+   `include_str!` to embed the ONNX policy and the Isolation Forest JSON from
+   `client/rl_agent/models/` (Members 1 and 3, Weeks 7–8). Both
+   `deploy-docker.sh` and `.dockerignore` excluded that directory. It is
+   2 MB, so it is no longer excluded.
+2. **`-lstdc++` not found.** Through `vpn_core`, the server now links ONNX
+   Runtime (`ort`, static, C++). The builder image gets `g++`; the runtime
+   image gets `libstdc++6`.
+3. **Undefined `__isoc23_strtol` / `_M_replace_cold`.** The prebuilt ONNX
+   Runtime needs glibc ≥ 2.38 and GCC ≥ 13; Debian bookworm has 2.36 and
+   GCC 12. Both Docker stages moved to **Debian 13 (trixie)**.
+
+**For Member 1:** the server never runs the RL policy, yet it now links a
+C++ ML runtime. That makes the image heavier and caused failures 2 and 3.
+Making `ort` an optional `vpn_core` feature, which the server would leave
+off, would undo both.
+
+### The vertical slice, against the real server
+
+- **`test-client`** (this laptop, over the internet) completed a full
+  ML-KEM-768 handshake. The server's signature verified against the new
+  pinned key, the laptop was assigned `10.8.0.2`, and `wg show` confirmed
+  the PSK was installed for that peer.
+- **`cargo run -p desktop --example vertical_slice`**, run with **no
+  arguments** and therefore using the app's built-in server address and key,
+  connected at ML-KEM-512. A second, 12-tick run ran the whole loop against
+  the droplet: live device and traffic readings → anomaly Layers 1–3 → RL
+  policy → decision gate → action. The server logged all three handshakes.
+  This is the Week 8 checkpoint.
+
+**Two observations for Member 3**, from that run on real university Wi-Fi:
+
+- Threat saturated at **1.000 ANOMALOUS** from tick 8 onwards, driven by
+  system-wide TCP retransmits (8–17%, one tick 100%). This confirms Member
+  1's Week 8 finding on another machine and another network.
+- **The policy stayed on ML-KEM-512 with p = 1.00 even while threat was
+  1.0.** Over 12 ticks it never moved towards 768/1024 or proposed a rekey.
+  That may be correct given fresh keys, but it is worth checking before the
+  Week 9 evaluation, since a demo viewer will expect a visible response to a
+  saturated threat signal.
+
+### Finding: WireGuard's UDP is blocked on eduroam and a mobile hotspot
+
+The tunnel test (WireGuard app plus the `test-client` config) failed with
+100% loss. The evidence, gathered on the server with packet captures and
+counters:
+
+| network | what reached the server | what came back |
+|---|---|---|
+| university eduroam | the **first** handshake initiation of each new flow (148 B); nothing after it, on 51820 or redirected 443/4500/1194 (exactly 1 packet per port) | the server's 92 B responses never completed a handshake; the client log showed `Handshake … did not complete`, retrying every 5 s |
+| mobile hotspot | every initiation (~11 in the window) | every response was sent (~11 × 92 B), and none reached the client |
+
+Over the same paths, plain TCP worked from both networks: SSH, and the PQC
+handshake on 51821. Changing the port didn't help, so the block is by
+**protocol signature, not port**. WireGuard is easy to fingerprint: fixed
+message types and fixed 148/92-byte handshake sizes. Whether the filtering is
+the campus firewall's, the carrier's or national is an inference, not
+something we can prove from here; the practical effect is the same. Week 6's
+tunnel worked from a home network.
+
+**This matters for the product, not only the demo.** The PQC layer (handshake,
+key derivation, PSK install, rekey) was unaffected and works from these
+networks. A VPN whose data plane can't reach the server is still unusable,
+though, so a transport fallback is a requirement for the target users.
+
+### `wg-relay` — WireGuard over obfuscated TCP
+
+`wstunnel` was the first choice. Windows Defender quarantined it as
+"potentially unwanted software" (tunnelling tools are commonly flagged). The
+same would happen on every teammate's laptop, so a small relay was written
+into this crate instead. It is built from source like `test-client`, so no
+downloaded binary gets flagged.
+
+**`src/relay.rs` + `src/bin/wg-relay.rs`.** The client binds
+`127.0.0.1:51820`, which becomes WireGuard's `Endpoint`, and carries each
+datagram over one TCP connection to the server. The server gives each
+connection its own UDP socket to `127.0.0.1:51820` and forwards **only**
+there, so it is not a proxy. The client reconnects on its own, and its UDP
+socket stays bound throughout, so the WireGuard app never notices a
+reconnect. Server limits: 64 connections, 180 s idle timeout, 10 s to open.
+It runs as a second compose service (`pqc-wg-relay`) on **TCP 443** from the
+same image, with every capability dropped except `NET_BIND_SERVICE`.
+
+**The first version was plain framing** (`u16 len ‖ datagram`). It failed
+live in two separate ways:
+
+1. **A bug of ours (Windows).** When the WireGuard app restarts on a new
+   port, the relay sends a reply to the old one. The resulting ICMP
+   port-unreachable surfaces on Windows as `WSAECONNRESET` (10054) on the
+   *UDP* socket. The client mistook that for the TCP connection dying and
+   reconnected in a loop. Fixed by ignoring UDP bounces on both ends.
+   Regression test: `relay_survives_wireguard_restarting`.
+2. **The network again.** With the bug fixed, the TCP connection was reset
+   **toward the client only**, about 3 s and 25 s in, once a real WireGuard
+   exchange was flowing. The server never saw a reset and was left holding
+   10 "established" zombie connections. A probe sending random payloads over
+   the same port, and one sending fake WireGuard-looking headers with no
+   reply, both ran untouched for 15 s. So the middlebox recognises
+   WireGuard's structure *inside* a TCP stream too.
+
+**The shipped version obfuscates the stream.** Each side opens with a
+16-byte random nonce. After that, every byte, lengths included, is XORed
+with a per-direction SHA-256 counter-mode keystream, and every frame carries
+0–63 bytes of random padding, so the 148/92-byte sizes don't show either. On
+the wire it is uniformly random. **This is camouflage, not security, and the
+code says so.** The keystream label is a public constant. Confidentiality
+and integrity come unchanged from WireGuard keyed with the PQC-derived PSK;
+the relay only ever carries WireGuard ciphertext.
+
+### Verified — the full chain, live
+
+| test | result |
+|---|---|
+| mobile hotspot: `ping 10.8.0.1` via relay | 10/10, avg 421 ms (plain TCP connect to the server on the same hotspot: 200–300 ms) |
+| **eduroam**: `ping 10.8.0.1` via relay | **10/10, avg 369 ms** |
+| network switch hotspot → eduroam mid-session | client saw `10053`, reconnected within 2 s from the new IP; server closed the old connection; one connection left |
+| WireGuard's own 2-minute rekeys through the relay | every one completed (`Keypair N created`), keepalives every 25 s |
+| throughput (eduroam, via relay) | 5 MiB in 7.5 s, **≈5.6 Mbit/s**, SHA-256 matched the server's copy |
+| 30-minute soak (eduroam, 1 ping/s) | **1793/1800 (99.6%)**, 7 isolated single losses (never two in a row), **zero relay reconnects**; p50 332 ms, p95 591 ms, p99 739 ms; server: 1 connection, load 0.00 |
+| server redeploy (containers recreated) | relay client reconnected by itself; tunnel kept working, 5/5 ping |
+| droplet reboot | `wg-quick@wg0`, Docker, both containers back within ~30 s with no intervention; relay client reconnected; **tunnel did not recover until the client re-handshook** (below) |
+
+**Reboot finding.** After a reboot `wg0` comes back with no peers. The PQC
+handshake server deliberately never writes the derived PSKs to disk, so it
+can't restore them. Every client's tunnel therefore stays down until that
+client does a fresh PQC handshake. This is the right trade-off: PSKs on disk
+would be a worse failure. But it puts a requirement on the client. **Member
+1's `TunnelHandle` (Week 9) should treat "no WireGuard handshake for ~3
+minutes" as a dead session and redo the PQC handshake.** In the manual setup,
+recovery is step 2 of `CONNECTING.md` again. After the reboot, idle eviction
+also correctly removed the stale registry entries (older than an hour, with
+no WireGuard handshake on record), so the next handshake got a clean address.
+
+So the full chain works from a network that blocks WireGuard: PQC handshake
+→ derived PSK → WireGuard → obfuscated TCP 443 relay → server.
+
+### Also this week
+
+- **Idle eviction on** in the image (`--idle-timeout-secs 3600`). The desktop
+  app currently makes a fresh WireGuard key on every run (Member 1, Week 8
+  known limit), so peers were piling up: three in the first hour. A peer is
+  evicted only when both its last PQC handshake and its last WireGuard
+  handshake are over an hour old. A live tunnel re-handshakes every ~2
+  minutes, so it is never evicted.
+- **`test-client --relay --out FILE`** writes a ready-to-import config with
+  `Endpoint = 127.0.0.1:51820`, so nothing needs hand-editing.
+- **`server/CONNECTING.md`** (new) is the team how-to for connecting from
+  your own laptop in five steps, with troubleshooting.
+- `provision.sh` now opens 443/tcp, so a rebuilt droplet gets the relay port.
+
+### Tests
+
+`cargo test -p handshake-server`:
+
+- **39 unit tests** (+5 relay):
+  - framing round trip;
+  - **no WireGuard header or length visible on the wire**, and frame sizes
+    vary;
+  - keystreams differ by nonce and direction;
+  - malformed and truncated frames are rejected.
+- **14 handshake integration tests**, unchanged.
+- **4 new relay integration tests**, each running app → relay client → TCP →
+  relay server → a fake `wg0` and back:
+  - WireGuard's real message sizes;
+  - a burst, with datagram boundaries preserved;
+  - two independent clients kept apart;
+  - the WireGuard app restarting on a new port.
+
+  The relay suite passed 8 runs out of 8 after fixing a Windows-only timing
+  flake in the test helper.
+
+`vpn_core` is untouched.
+
+### Not done / known limits
+
+- **The relay is manual** (a second terminal). Member 1's Week 9, the
+  `TunnelHandle` bringing WireGuard up from Rust, should start it and set
+  `Endpoint` the same way.
+- **The disguise isn't permanent.** A firewall that flags fully random
+  streams could still catch it. Wrapping the relay in real TLS is the next
+  step if that happens.
+- **TCP-over-TCP costs latency** on lossy links. Member 3's Week 9–10
+  evaluation should label whether a measurement used direct UDP or the relay.
+- **A PQC rekey still needs a manual PSK hot-swap** on the client (`wg set`)
+  until the app does it.
+- The handshake on 51821 is plain TCP and currently gets through. If it ever
+  stops, the same relay idea, or moving it behind 443, covers it.
+
+### Status against the Week 8 mandate
+
+The checkpoint is met: a real desktop client ran the real agent and the
+anomaly layers against the real server and performed real PQC handshakes.
+Beyond the mandate, the tunnel those handshakes key now carries traffic from
+networks that block WireGuard, which the MVP demo on campus depends on.
+
 ## How to reproduce
 
 ```bash
