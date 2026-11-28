@@ -7,6 +7,7 @@
 //!                    [--peers-file PATH] [--max-peers N] [--idle-timeout-secs N]
 //!                    [--replay-window-secs N] [--rate-burst N] [--rate-per-min N]
 //!                    [--max-conns N]
+//!                    [--session-log PATH | --no-session-log] [--session-log-max-mb N]
 //!
 //! defaults: --bind 0.0.0.0:51821  --identity ./server-identity.seed
 //!           --wg-port 51820       --tunnel-cidr 10.8.0.0/24
@@ -14,6 +15,8 @@
 //!           --idle-timeout-secs 0  (0 = no idle eviction)
 //!           --replay-window-secs 120  --rate-burst 20  --rate-per-min 30
 //!           --max-conns 64           (Week 7, PROTOCOL.md §7)
+//!           --session-log <identity dir>/sessions.jsonl  --session-log-max-mb 20
+//!                                    (Week 9, server/SESSION_LOG.md)
 //!
 //! With `--wg-interface` the derived PSK is installed via `wg set` (needs
 //! CAP_NET_ADMIN). Without it the server runs in dry-run.
@@ -25,6 +28,7 @@ use std::time::Duration;
 
 use anyhow::{Context, Result};
 
+use handshake_server::events::{Event, EventLog};
 use handshake_server::guard::{Guard, GuardConfig};
 use handshake_server::identity::ServerIdentity;
 use handshake_server::registry::{Registry, DEFAULT_MAX_PEERS};
@@ -42,6 +46,9 @@ fn main() -> Result<()> {
     let mut max_peers = DEFAULT_MAX_PEERS;
     let mut idle_timeout_secs: u64 = 0;
     let mut guard_cfg = GuardConfig::default();
+    let mut session_log: Option<PathBuf> = None;
+    let mut no_session_log = false;
+    let mut session_log_max_mb: u64 = 20;
 
     let mut args = std::env::args().skip(1);
     while let Some(a) = args.next() {
@@ -62,12 +69,16 @@ fn main() -> Result<()> {
             "--rate-burst" => guard_cfg.rate_burst = val()?.parse().context("--rate-burst")?,
             "--rate-per-min" => guard_cfg.rate_per_minute = val()?.parse().context("--rate-per-min")?,
             "--max-conns" => guard_cfg.max_concurrent = val()?.parse().context("--max-conns")?,
+            "--session-log" => session_log = Some(PathBuf::from(val()?)),
+            "--no-session-log" => no_session_log = true,
+            "--session-log-max-mb" => session_log_max_mb = val()?.parse().context("--session-log-max-mb")?,
             "-h" | "--help" => {
                 println!("handshake-server [--bind ADDR] [--identity PATH] [--wg-interface NAME]");
                 println!("                 [--wg-port N] [--tunnel-cidr CIDR] [--wg-pubkey BASE64]");
                 println!("                 [--peers-file PATH] [--max-peers N] [--idle-timeout-secs N]");
                 println!("                 [--replay-window-secs N] [--rate-burst N] [--rate-per-min N]");
                 println!("                 [--max-conns N]");
+                println!("                 [--session-log PATH | --no-session-log] [--session-log-max-mb N]");
                 return Ok(());
             }
             other => anyhow::bail!("unknown argument: {other}"),
@@ -139,18 +150,48 @@ fn main() -> Result<()> {
         guard_cfg.max_concurrent
     );
 
+    // Week 9: session event log (JSON Lines), next to the identity by default.
+    let log = if no_session_log {
+        println!("session log    : off");
+        EventLog::null()
+    } else {
+        let path = session_log.unwrap_or_else(|| {
+            identity_path
+                .parent()
+                .unwrap_or_else(|| std::path::Path::new("."))
+                .join("sessions.jsonl")
+        });
+        let log = EventLog::to_file(&path, session_log_max_mb.max(1) * 1024 * 1024)
+            .with_context(|| format!("opening session log {}", path.display()))?;
+        println!("session log    : {} (rotates at {} MB)", path.display(), session_log_max_mb.max(1));
+        log
+    };
+    let log = Arc::new(log);
+    log.emit(Event::ServerStart {
+        version: env!("CARGO_PKG_VERSION").to_string(),
+        psk_install: ctx.installer.describe(),
+        max_peers,
+        idle_timeout_s: idle_timeout_secs,
+        replay_window_s: guard_cfg.replay_window.as_secs(),
+        rate_burst: guard_cfg.rate_burst,
+        rate_per_min: guard_cfg.rate_per_minute,
+        max_conns: guard_cfg.max_concurrent,
+    });
+
     // reconcile the registry against the live interface
-    server::reconcile_wg_peers(&ctx);
+    server::reconcile_wg_peers(&ctx, &log);
 
     if idle_timeout_secs > 0 {
-        server::spawn_idle_sweep(Arc::clone(&ctx), Duration::from_secs(idle_timeout_secs));
+        server::spawn_idle_sweep(Arc::clone(&ctx), Arc::clone(&log), Duration::from_secs(idle_timeout_secs));
     }
+    // tunnel_up / tunnel_down from WireGuard's own handshakes
+    server::spawn_liveness_monitor(Arc::clone(&ctx), Arc::clone(&log));
 
     let listener = TcpListener::bind(&bind).with_context(|| format!("bind {bind}"))?;
     println!("listening on   : {}\n", listener.local_addr()?);
 
     let guard = Arc::new(Guard::new(guard_cfg));
     server::spawn_guard_prune(Arc::clone(&guard));
-    server::serve(listener, ctx, guard);
+    server::serve_logged(listener, ctx, guard, log);
     Ok(())
 }

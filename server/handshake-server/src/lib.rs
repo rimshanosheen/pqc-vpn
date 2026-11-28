@@ -10,6 +10,8 @@
 //! - [`client_handshake`]— client side, for the test client and vector emitter
 //! - [`registry`]        — multi-peer registry (session ↔ wg peer ↔ address), persisted
 //! - [`relay`]           — UDP-over-TCP transport for WireGuard on networks that block it (Week 8)
+//! - [`events`]          — session event log (JSON Lines) + tunnel liveness (Week 9)
+//! - [`report`]          — summaries of the session log (`session-report` binary)
 //! - [`guard`]           — replay cache + per-IP rate limit + connection cap (§7, Week 7)
 //!
 //! The cryptographic primitives are all `vpn_core::crypto` (Member 1's port).
@@ -17,12 +19,14 @@
 
 pub mod client_handshake;
 pub mod error;
+pub mod events;
 pub mod guard;
 pub mod handshake;
 pub mod identity;
 pub mod kdf;
 pub mod registry;
 pub mod relay;
+pub mod report;
 pub mod server;
 pub mod transcript;
 pub mod tunnel;

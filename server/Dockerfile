@@ -26,9 +26,11 @@ COPY . .
 # layer and make rebuilds fast. Copy the binary out before the mounts unmount.
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/build/target \
-    cargo build --release -p handshake-server --bin handshake-server --bin wg-relay \
+    cargo build --release -p handshake-server \
+        --bin handshake-server --bin wg-relay --bin session-report \
     && cp target/release/handshake-server /handshake-server \
-    && cp target/release/wg-relay /wg-relay
+    && cp target/release/wg-relay /wg-relay \
+    && cp target/release/session-report /session-report
 
 # ---- runtime --------------------------------------------------------------
 FROM debian:trixie-slim
@@ -39,9 +41,13 @@ RUN apt-get update \
 COPY --from=builder /handshake-server /usr/local/bin/handshake-server
 # UDP-over-TCP relay for WireGuard (Week 8) — run by the `wg-relay` compose service.
 COPY --from=builder /wg-relay /usr/local/bin/wg-relay
+# Session-log summary (Week 9):
+#   docker exec pqc-handshake-server session-report /var/lib/pqc-vpn/sessions.jsonl
+COPY --from=builder /session-report /usr/local/bin/session-report
 
 # Identity seed + derived .pub live here; mount a volume so they survive
-# container recreation (the .pub is pinned in every client).
+# container recreation (the .pub is pinned in every client). Also peers.json
+# and, since Week 9, the session log sessions.jsonl (+ rotated sessions.jsonl.1).
 VOLUME ["/var/lib/pqc-vpn"]
 
 EXPOSE 51821/tcp 443/tcp

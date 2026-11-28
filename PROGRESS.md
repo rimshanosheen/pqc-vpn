@@ -2388,6 +2388,148 @@ anomaly layers against the real server and performed real PQC handshakes.
 Beyond the mandate, the tunnel those handshakes key now carries traffic from
 networks that block WireGuard, which the MVP demo on campus depends on.
 
+## Week 9 (Member 2 track, 2026-11-28) — session logging
+
+Assigned task (`TEAM_TIMELINE_PROPOSAL.md`): session logging of connect,
+disconnect and rekey events, needed for the dashboard and for Member 3's
+evaluation work, since the baseline comparisons need session-level data.
+
+### `events.rs` (new): a JSON Lines session log
+
+The server writes one JSON object per line to
+`/var/lib/pqc-vpn/sessions.jsonl`, which is on the persistent volume and
+survives redeploys. The file rotates to `.1` at 20 MB. Every record carries
+`v` (schema 1), `ts_ms` and `event`. **No PSK or other secret is ever
+logged**, and a test asserts that. The full schema, with field meanings and a
+pandas snippet, is in the new **`server/SESSION_LOG.md`**.
+
+| event | when | key fields |
+|---|---|---|
+| `server_start` | startup | the full guard, eviction and capacity config the rest of the log ran under |
+| `handshake` | a client connected | `algo`, `assigned_ip`, `new_peer` (false = reconnect), `handshake_ms`, `src` |
+| `rekey` | live PSK rotation | `from_algo` → `algo`, `escalated`, `rekeys`, `handshake_ms` |
+| `rejected` | protocol `Error` sent | `stage` (hello/finish/registry/install), `code`, `reason`, `rekey` |
+| `refused` | Week 7 guard | `code` 6 (replay) / 7 (rate limit, busy) |
+| `aborted` | client vanished mid-handshake | `error` |
+| `tunnel_up` / `tunnel_down` | WireGuard session started / ended | `up_s`, `idle_s`, `rx_bytes`, `tx_bytes` |
+| `evicted` | peer removed | `reason` (idle / unknown_on_startup), `session_age_s`, `rekeys` |
+
+**Disconnects.** Protocol v1 has no disconnect message, and this week does
+not change the frozen protocol. Instead a liveness monitor polls `wg show`
+every 15 s and logs `tunnel_down` once a peer has gone **180 s without a
+WireGuard handshake**. That is WireGuard's own `REJECT_AFTER_TIME`, after
+which its session keys are dead. Every client config sets
+`PersistentKeepalive = 25`, so a live tunnel re-handshakes every ~2 minutes,
+and `tunnel_down` therefore means the client really left. `PskInstaller`
+gained a `transfer()` method, with a default implementation so existing
+implementors are unaffected, to put WireGuard's byte counters on
+`tunnel_down`.
+
+**`handshake_ms` is server-side:** from receiving message 1 to sending
+`ServerFinish`. It includes the ML-KEM encapsulation and ML-DSA-65 signing,
+**plus one client round trip**. On eduroam (RTT ~300 ms) the live values were
+340–410 ms, so the network dominates. Member 3 should compare ML-KEM levels
+from the same client and network, or subtract a ping RTT. The schema doc says
+this explicitly.
+
+### Wiring, without touching `core/`
+
+`server.rs` gains `serve_logged` / `handle_connection_logged`.
+`ServerContext`, `serve`, `handle_connection` and `handle_connection_guarded`
+keep their signatures and log nothing, because `vpn_core`'s loopback tests
+call them directly. Every explicit rejection is logged exactly once, and only
+a connection that fails *without* one is logged as `aborted`, so nothing is
+counted twice. The idle sweep was factored into a testable `sweep_once`.
+`Registry::get` (a snapshot of one peer) was added so a rekey can log its
+`from_algo` and a handshake its `new_peer`.
+
+New flags: `--session-log PATH`, `--no-session-log`, `--session-log-max-mb N`.
+
+### `session-report` (new binary, also in the Docker image)
+
+`session-report [--json] FILE…` folds the log into one summary:
+
+- handshakes per algorithm, and reconnects;
+- server-side handshake time per algorithm (n / mean / p50 / p95 / max);
+- rekeys, `from → to` transitions and escalations;
+- rejections by code, guard refusals and evictions;
+- completed tunnel sessions (length) and their traffic.
+
+`--json` gives Member 3 the same summary machine-readable. On the droplet:
+`sudo docker exec pqc-handshake-server session-report /var/lib/pqc-vpn/sessions.jsonl`.
+
+### Tests
+
+- **Unit:** 46 in total, 7 new.
+  - The record shape is pinned: field names, and optional fields omitted
+    rather than null.
+  - Each variant's `event` tag matches its name.
+  - The file sink appends on reopen and rotates without losing a record.
+  - `wg show … transfer` parsing.
+  - The `session-report` summary of a known log, and its percentiles.
+- **Integration, `tests/session_log.rs` (6 new):** these run the real
+  `serve_logged` accept loop over loopback TCP with an in-memory log.
+  - **Handshakes:** a handshake and a reconnect (`new_peer`, same address).
+  - **Rekeys:** a rekey 768 → 1024 (`escalated`, count). A failed rekey is
+    not logged as a rekey.
+  - **Rejections:** a downgrade (`0x05`, stage `registry`) and an unknown
+    session (`0x04`).
+  - **Guard refusals:** a replay (`0x06`) and a rate limit (`0x07`).
+  - **Aborts:** a client vanishing after `ServerHello` is logged as
+    `aborted`, not also as `rejected`.
+  - **Tunnel liveness:** a fake WireGuard with settable handshake times and
+    counters drives `tunnel_up`, staying up across keepalive re-handshakes,
+    then `tunnel_down` past 180 s with `up_s`/`idle_s`/bytes, and coming back
+    up.
+  - **Eviction:** `sweep_once` evicts the idle peer, logs it and keeps the
+    live one.
+- **Mutation check:** hard-coding `escalated: false` fails the rekey test.
+
+`cargo test -p handshake-server` passes: 46 unit, 14 handshake, 4 relay and
+6 session-log tests, three runs in a row. `vpn_core` is 96/96, unchanged.
+
+### Verified live on the droplet
+
+- `server_start`, then within milliseconds `tunnel_up` for the laptop
+  tunnel that was already up (`10.8.0.2`, ML-KEM-768).
+- From eduroam:
+  - `test-client` handshake at ML-KEM-768;
+  - a `--rekey` to ML-KEM-1024, logged as `rekey`, `escalated: true`;
+  - a `--rekey` back to 512, refused and logged as `rejected`, code 5,
+    stage `registry`;
+  - a `vertical_slice` run, logged as `handshake` at ML-KEM-512.
+- **Disconnect detection on real WireGuard.** Stopping the laptop's relay
+  client silenced the tunnel. The server logged `tunnel_down` 144 s later,
+  with `idle_s` 191 and real `rx_bytes`/`tx_bytes`. Restarting the relay
+  brought the tunnel back by itself: one lost ping, then 4/4 replies, and a
+  second `tunnel_up` 11 s later.
+- `session-report` inside the container summarised it correctly: 2
+  handshakes, 1 escalation 768 → 1024, 1 rejection 0x05, 3 distinct peers.
+
+### Not done / known limits
+
+- **Liveness is in memory.** A server restart logs a fresh `tunnel_up` for
+  every still-live tunnel, so `up_s` counts from the restart. This is
+  documented; split sessions at `server_start` records.
+- **`src` is a public IP and can be shared behind NAT** (a campus). The
+  stable client identity is `peer`, the WireGuard public key. The desktop app
+  still generates a new one per run (Member 1, Week 8 known limit), so until
+  Week 9 on that side lands, one laptop shows up as many peers.
+- **No live push to the dashboard.** Member 1's dashboard reads `core`
+  in-process on the client. If it later wants the server's view, the JSONL
+  file (or `session-report --json`) is the interface, and a read-only
+  endpoint could come in Week 11.
+- Field order in a record is alphabetical (`serde_json` default). That
+  doesn't matter to JSON readers, but `tail -f` puts `event` mid-line.
+
+### Status against the Week 9 mandate
+
+Done: connect (`handshake`), disconnect (`tunnel_down`, inferred from
+WireGuard with no protocol change) and rekey events are logged with the
+session-level fields Member 3's evaluation needs, plus rejections, refusals,
+aborts and evictions, a summary tool and a documented schema, all verified
+live.
+
 ## How to reproduce
 
 ```bash

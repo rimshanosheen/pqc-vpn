@@ -187,6 +187,11 @@ impl Registry {
         self.inner.lock().unwrap().keys().copied().collect()
     }
 
+    /// A snapshot of one peer's record.
+    pub fn get(&self, wg_pubkey: &[u8; 32]) -> Option<Peer> {
+        self.inner.lock().unwrap().get(wg_pubkey).cloned()
+    }
+
     pub fn contains(&self, wg_pubkey: &[u8; 32]) -> bool {
         self.inner.lock().unwrap().contains_key(wg_pubkey)
     }

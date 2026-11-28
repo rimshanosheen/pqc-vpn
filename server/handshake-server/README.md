@@ -23,6 +23,8 @@ persistence, peer/tunnel management, and a blocking TCP server.
 | `registry` | multi-peer registry: session ↔ wg peer ↔ tunnel address, persisted to `peers.json` (no PSKs); capacity limit; startup reconciliation against `wg0` |
 | `guard` | Week 7: `client_nonce` replay cache, per-IP token-bucket rate limit, concurrent-connection cap (`PROTOCOL.md` §7) |
 | `server` | TCP accept loop (admission via `guard`) + per-connection handler; updates the registry and installs the PSK; optional idle sweep |
+| `events` | Week 9: session event log (JSON Lines, schema in `../SESSION_LOG.md`) and the WireGuard-liveness monitor behind `tunnel_up` / `tunnel_down` |
+| `report` | Week 9: summaries of the session log (`session-report` binary) |
 | `relay` | Week 8: obfuscated UDP-over-TCP transport for WireGuard's data plane, for networks that block WireGuard (`wg-relay` binary) |
 
 ## Binaries
@@ -39,6 +41,10 @@ cargo run -p handshake-server --bin handshake-server -- \
 
 # Week 7 guard knobs (defaults shown) — PROTOCOL.md §7
 #   --replay-window-secs 120 --rate-burst 20 --rate-per-min 30 --max-conns 64
+
+# Week 9 session log (defaults shown) — ../SESSION_LOG.md
+#   --session-log <identity dir>/sessions.jsonl --session-log-max-mb 20  (or --no-session-log)
+cargo run -p handshake-server --bin session-report -- [--json] sessions.jsonl
 
 # throwaway test client — full handshake, then prints a wg-quick client config
 cargo run -p handshake-server --bin test-client -- \
@@ -92,6 +98,21 @@ per-nonce/per-direction keystreams, malformed and truncated frames), and
 → a fake `wg0` and back — for WireGuard's real message sizes, a burst (datagram
 boundaries preserved), two independent clients, and the WireGuard app
 restarting on a new port (the Windows `WSAECONNRESET` case found live).
+
+Since Week 9, `tests/session_log.rs` runs the real `server::serve_logged`
+accept loop with an in-memory log and checks each event:
+
+- handshake and reconnect (`new_peer`, same address);
+- rekey (`from_algo` → `algo`, `escalated`, count);
+- registry rejections (downgrade `0x05`, unknown session `0x04`);
+- guard refusals (replay `0x06`, rate limit `0x07`);
+- a client vanishing mid-handshake (`aborted`, not double-logged).
+
+A fake WireGuard with settable handshake times and byte counters drives
+`tunnel_up` and `tunnel_down` (180 s rule, `up_s`/`idle_s`/bytes, coming back
+up), and the idle sweep's `evicted` event while a live peer is kept. Unit
+tests pin the record shape, omitted-not-null optionals, file append and
+rotation, and the `session-report` summary.
 
 ## Not yet done (later weeks)
 

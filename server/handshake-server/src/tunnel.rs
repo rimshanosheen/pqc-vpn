@@ -92,6 +92,13 @@ pub trait PskInstaller: Send + Sync {
     /// liveness signal). Empty for `DryRun`.
     fn last_handshakes(&self) -> Result<HashMap<[u8; 32], SystemTime>, InstallError>;
 
+    /// Each peer's `(rx_bytes, tx_bytes)` counters as WireGuard reports them
+    /// (Week 9, for the session log). Defaults to empty, so existing
+    /// implementations need no change.
+    fn transfer(&self) -> Result<HashMap<[u8; 32], (u64, u64)>, InstallError> {
+        Ok(HashMap::new())
+    }
+
     fn describe(&self) -> String;
 }
 
@@ -223,9 +230,27 @@ impl PskInstaller for WgCli {
         Ok(map)
     }
 
+    fn transfer(&self) -> Result<HashMap<[u8; 32], (u64, u64)>, InstallError> {
+        let out = run("wg", &["show", &self.interface, "transfer"])?;
+        Ok(parse_transfer(&String::from_utf8_lossy(&out)))
+    }
+
     fn describe(&self) -> String {
         format!("wg set {}", self.interface)
     }
+}
+
+/// Parse `wg show <iface> transfer` output: `<pubkey>\t<rx>\t<tx>` per line.
+pub fn parse_transfer(out: &str) -> HashMap<[u8; 32], (u64, u64)> {
+    let mut map = HashMap::new();
+    for line in out.lines() {
+        let mut cols = line.split_whitespace();
+        let (Some(pk), Some(rx), Some(tx)) = (cols.next(), cols.next(), cols.next()) else { continue };
+        if let (Some(pk), Ok(rx), Ok(tx)) = (wg_key_from_base64(pk), rx.parse(), tx.parse()) {
+            map.insert(pk, (rx, tx));
+        }
+    }
+    map
 }
 
 fn run(cmd: &str, args: &[&str]) -> Result<Vec<u8>, InstallError> {
@@ -268,5 +293,15 @@ mod tests {
         assert!(d.install(&[0; 32], &[0; 32], Ipv4Addr::new(10, 8, 0, 2), AlgoCode::MlKem768).is_ok());
         assert!(d.list_installed_peers().unwrap().is_empty());
         assert!(d.remove_peer(&[0; 32]).is_ok());
+        assert!(d.transfer().unwrap().is_empty());
+    }
+
+    #[test]
+    fn transfer_parsing() {
+        let k = B64.encode([7u8; 32]);
+        let out = format!("{k}\t3727\t2180\nnot-a-key\t1\t2\n{}\tx\t1\n", B64.encode([8u8; 32]));
+        let m = parse_transfer(&out);
+        assert_eq!(m.len(), 1);
+        assert_eq!(m[&[7u8; 32]], (3727, 2180));
     }
 }

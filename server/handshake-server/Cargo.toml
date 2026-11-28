@@ -22,6 +22,10 @@ name = "wg-relay"
 path = "src/bin/wg-relay.rs"
 
 [[bin]]
+name = "session-report"
+path = "src/bin/session-report.rs"
+
+[[bin]]
 name = "emit-vectors"
 path = "src/bin/emit-vectors.rs"
 
